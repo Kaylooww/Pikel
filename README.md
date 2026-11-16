@@ -10,7 +10,7 @@
 2. Download Godot 4.7.2 standard build: <https://godotengine.org/download/windows/>.
 3. Launch Godot Project Manager → **Import** → choose this folder's `project.godot` → **Import & Edit**.
 4. Let the editor import the project, then press **F5**. Choose **PLAY PRACTICE PROTOTYPE**.
-5. Use **WASD** to move, **Shift** to sprint, move the **mouse** to aim, **left click** for a drive, **right click** for a softer dink, **R** to reset, and **Esc** for the menu.
+5. Use **WASD** to move, **Shift** to sprint, move the **mouse** to aim, **left click** for a drive, **right click** for a softer dink, **R** to reset, **C** to switch camera view, and **Esc** for the menu.
 6. Read **[SETUP_WINDOWS_GODOT_CLAUDE.md](SETUP_WINDOWS_GODOT_CLAUDE.md)** and paste **[prompts/MASTER_STARTING_PROMPT.md](prompts/MASTER_STARTING_PROMPT.md)** into Claude Code from this project folder.
 
 ## Current implementation — truth table
@@ -29,6 +29,7 @@
 | Court bounds/kitchen/serve-box predicates | Frozen and line-exact; 29 unit checks plus seven smoke checks |
 | Gameplay tuning config | `config/gameplay_tuning.tres`; 15 unit checks. Camera values not yet included |
 | Trajectory preview and landing feedback | Dotted arcs for drive and dink from the solver, marker and text for OK / blocked / out of reach, landing dot and miss distance; logic tested headless, **not yet seen on screen** |
+| Camera | `CourtCamera` with two data-driven rigs (raised training view, lower match chase view), frame-rate independent smoothing, **C** switches; 18 unit checks. Match view values are untuned and unseen |
 | Real serves, legal scoring, two-bounce enforcement | **Not implemented** |
 | Singles match state machine | **Not implemented** |
 | Online multiplayer, dedicated server, matchmaking | **Not implemented** |

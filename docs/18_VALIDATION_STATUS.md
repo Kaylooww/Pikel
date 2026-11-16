@@ -61,6 +61,15 @@
 - [x] Training scene, 120 headless frames — exit 0, no script errors.
 - [ ] The dots, marker colours and HUD lines have not been seen on screen. Headless runs have no renderer, so size, visibility and clutter are unknown.
 
+## RP-013 results recorded 2026-11-17 (same machine and Godot build)
+
+- [x] Headless import — exit 0, no errors or warnings printed.
+- [x] Unit tests: rules 7, net collision 11, court dimensions 29, gameplay tuning 15, shot solver 24 — all pass.
+- [x] `test_camera.gd` — `PASS: 18 camera checks`.
+- [x] `tests/integration/test_training_preview.gd` — `PASS: 15 training preview checks`.
+- [x] Training scene, 120 headless frames — exit 0, no script errors.
+- [ ] Neither camera view has been seen on screen. The match view's numbers are a first guess.
+
 Still not performed: F5 gameplay with a human, Windows export, MCP editor connection.
 
 Do not describe this project as a fully validated production game.

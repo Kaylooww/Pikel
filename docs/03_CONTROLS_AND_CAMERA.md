@@ -12,6 +12,7 @@
 | Esc | Menu | Pause/settings/exit lobby |
 | Space | Not implemented | Lunge/dive |
 | Q/E | Not implemented | Spin modifiers |
+| C | Switch between training and match camera views | Settings option, not a live-match key |
 | Mouse wheel | Not implemented | Camera distance |
 | Controller | Not implemented | Post-beta accessibility / Steam Input |
 
@@ -24,6 +25,8 @@
 6. Distinguish exact cursor target from actual predicted landing when skill error is applied.
 
 ## Production camera
+**Implemented:** `CourtCamera` owns all camera motion and reads a `CameraRig` resource (height, depth, how much it follows the player, look point, field of view, smoothing rate). Smoothing is exponential in time, so it behaves the same at any frame rate. Two rigs ship: the raised training view (unchanged from the prototype) and a lower match chase view that follows the player in depth. Cursor aiming uses whichever camera is active, so the aim point stays under the cursor in both. The remaining bullets below are still to do.
+
 - Third-person raised chase camera, both halves readable.
 - Dynamic follow with configurable smoothing (time-based rather than per-frame lerp).
 - Include camera occlusion and net visibility testing.
