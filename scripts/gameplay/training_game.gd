@@ -5,7 +5,7 @@ extends Node3D
 @onready var player: PickleballPlayer = $HomePlayer
 @onready var bot: PickleballPlayer = $PracticeOpponent
 @onready var ball: PickleballBall = $Ball
-@onready var camera: Camera3D = $Camera3D
+@onready var camera: CourtCamera = $Camera3D
 const AIM_OK := Color(0.33, 0.84, 0.80, 0.70)
 const AIM_BLOCKED := Color(1.0, 0.51, 0.42, 0.70)
 const AIM_IDLE := Color(0.75, 0.78, 0.80, 0.40)
@@ -36,6 +36,8 @@ func _ready() -> void:
     var ball_material := StandardMaterial3D.new()
     ball_material.albedo_color = Color("ffe86b")
     ball.get_node("Visual").material_override = ball_material
+    camera.target = player
+    camera.snap()
     _reset_ball()
     ball.bounced.connect(_on_ball_bounced)
     ball.fault.connect(_on_ball_fault)
@@ -84,8 +86,6 @@ func _process(_delta: float) -> void:
             target_position = Vector3(clampf(world.x, -CourtDimensions.HALF_WIDTH + 0.16, CourtDimensions.HALF_WIDTH - 0.16), 0.0, clampf(world.z, -CourtDimensions.HALF_LENGTH + 0.14, -0.20))
             marker.position = Vector3(target_position.x, 0.10, target_position.z)
     _update_aim_preview()
-    camera.position = Vector3(lerpf(camera.position.x, player.position.x * 0.35, 0.06), 9.2, 12.0)
-    camera.look_at(Vector3(player.position.x * 0.16, 0.0, -0.15), Vector3.UP)
     if ball.moving and not resetting:
         var want: Vector3 = Vector3(clampf(ball.position.x, -2.9, 2.9), 0, -4.8)
         bot.ai_direction = (want - bot.position).normalized() if ball.position.z < 1.0 else (Vector3(0, 0, -5.1) - bot.position).normalized()
@@ -103,6 +103,9 @@ func _unhandled_input(event: InputEvent) -> void:
         if event.keycode == KEY_R:
             _reset_ball()
             _set_status("New practice ball ready.")
+        elif event.keycode == KEY_C:
+            camera.next_rig()
+            _set_status("Camera view changed.")
         elif event.keycode == KEY_ESCAPE:
             get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
     if event is InputEventMouseButton and event.pressed and not resetting:
@@ -229,7 +232,7 @@ func _make_hud() -> void:
     shot_label.text = "LAST SHOT  —  none yet"
     stack.add_child(shot_label)
     var help := Label.new()
-    help.text = "WASD move | SHIFT sprint | Mouse aim | LEFT drive | RIGHT dink | R reset | ESC menu"
+    help.text = "WASD move | SHIFT sprint | Mouse aim | LEFT drive | RIGHT dink | R reset | C camera | ESC menu"
     stack.add_child(help)
     _update_score()
 

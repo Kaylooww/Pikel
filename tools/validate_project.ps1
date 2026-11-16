@@ -15,4 +15,6 @@ if ($LASTEXITCODE -ne 0) { throw "Godot gameplay tuning checks failed: $LASTEXIT
 if ($LASTEXITCODE -ne 0) { throw "Godot shot solver checks failed: $LASTEXITCODE" }
 & $Godot --headless --path . --script res://tests/integration/test_training_preview.gd
 if ($LASTEXITCODE -ne 0) { throw "Godot training preview checks failed: $LASTEXITCODE" }
+& $Godot --headless --path . --script res://tests/unit/test_camera.gd
+if ($LASTEXITCODE -ne 0) { throw "Godot camera checks failed: $LASTEXITCODE" }
 Write-Host "Basic Godot checks passed. Manual F6/F5 gameplay playtesting is still required."

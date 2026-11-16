@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CameraRig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/camera_rig.gd" id="1_rig"]
+
+[resource]
+script = ExtResource("1_rig")
+height = 5.5
+base_z = 7.0
+follow_x = 0.7
+follow_z = 0.6
+look_follow_x = 0.4
+look_z = -1.5
+fov = 62.0
+smoothing_rate = 5.0
