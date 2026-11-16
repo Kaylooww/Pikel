@@ -25,7 +25,7 @@ Progress is tracked here: `[x]` done, `[ ]` open. `prompts/NEXT.md` picks the fi
 ## Sprint 1: ball and input quality
 - [x] **RP-010 (P0):** Swept net collision (avoid tunneling), including net top and posts.
 - [x] **RP-011 (P0):** Basic valid shot solver with target, contact height and net clearance.
-- [ ] **RP-012 (P0):** Honest trajectory/landing preview and miss feedback.
+- [x] **RP-012 (P0):** Honest trajectory/landing preview and miss feedback.
 - [ ] **RP-013 (P0):** Separate in-game and training camera controllers.
 - [ ] **RP-014 (P1):** Input action map + rebinding-ready API.
 - [ ] **RP-015 (P1):** Player paddle contact windows and swing quality.

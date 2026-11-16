@@ -49,6 +49,24 @@ func _initialize() -> void:
     _assert(_fly(Vector3(2.5, 0.9, 6.0), Vector3(-CourtDimensions.HALF_WIDTH, 0, -CourtDimensions.HALF_LENGTH), false, t).distance_to(Vector3(-CourtDimensions.HALF_WIDTH, R, -CourtDimensions.HALF_LENGTH)) < 0.02, "ball lands on the far corner")
     _assert(fault_reason == "", "a shot aimed exactly at the corner is in")
 
+    # Preview points come from the same solved arc (RP-012).
+    var arc: PackedVector3Array = ShotSolver.sample_arc(origin, drive, t.gravity, 16)
+    _assert(arc.size() == 16, "arc has the requested number of points")
+    _assert(arc[0].is_equal_approx(origin), "arc starts at the ball")
+    _assert(arc[15].distance_to(Vector3(target.x, R, target.z)) < 0.001, "arc ends on the target")
+    var forward: bool = true
+    for i in range(1, arc.size()):
+        forward = forward and arc[i].z < arc[i - 1].z and arc[i].y >= R - 0.001
+    _assert(forward, "arc moves toward the target and stays above the floor")
+    _assert(ShotSolver.sample_arc(Vector3(0.0, 0.3, 0.4), hopeless, t.gravity).is_empty(), "a refused shot has no arc")
+    var preview := TrajectoryPreview.new()
+    preview.show_points(arc)
+    _assert(preview.multimesh.visible_instance_count == 16, "preview shows one dot per point")
+    _assert(preview.shown_points[15].is_equal_approx(arc[15]), "last dot sits on the landing point")
+    preview.show_points(PackedVector3Array())
+    _assert(preview.multimesh.visible_instance_count == 0, "empty arc hides the preview")
+    preview.free()
+
     # A refused shot leaves the ball alone.
     var ball: PickleballBall = BALL_SCENE.instantiate()
     ball.reset_ball(Vector3(0.0, 0.3, 0.4))

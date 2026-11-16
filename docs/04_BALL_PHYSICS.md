@@ -6,7 +6,8 @@ The starter integrates gravity and a simple ballistic shot toward the cursor tar
 ## Implemented so far
 - `scripts/physics/shot_solver.gd` (`ShotSolver.solve`) turns origin, target and shot type into a launch velocity. It starts from the flight time the shot type prefers, lengthens the flight in 5% steps (a higher arc) until the swept net test passes, and refuses with a reason (`BAD_TARGET`, `NET`, `TOO_FAST`) when no arc within `max_flight_time` and `max_launch_speed` works.
 - `ball_controller.gd` integrates the exact constant-gravity step, so the flown path is the same parabola the solver used, and it backs the ball up to the moment of floor contact so in/out is judged on the true landing point. In tests the ball lands within 2 cm of the solved target.
-- Not yet: drag, spin, contact height chosen by the player, skill error, paddle contact windows (RP-015), and any on-screen preview of the solved arc (RP-012).
+- `ShotSolver.sample_arc` gives evenly timed points along a solved shot. `scripts/physics/trajectory_preview.gd` draws them as dots and decides nothing. The training scene previews what a click would do right now, for both shot types, and reports where the last shot landed against where it was aimed.
+- Not yet: drag, spin, contact height chosen by the player, skill error, paddle contact windows (RP-015).
 
 ## Model
 Use position `p`, velocity `v`, spin `omega`, fixed step `dt`. Candidate acceleration:
