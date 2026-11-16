@@ -79,6 +79,15 @@
 - [x] Training scene, 120 headless frames — exit 0, no script errors.
 - [ ] No real keyboard or mouse has been used against the new action map.
 
+## RP-015 results recorded 2026-11-17 (same machine and Godot build)
+
+- [x] Headless import — exit 0, no errors or warnings printed.
+- [x] Unit tests: rules 7, net collision 11, court dimensions 29, gameplay tuning 15, shot solver 24, camera 18, input 26 — all pass.
+- [x] `test_swing_contact.gd` — `PASS: 22 swing contact checks`.
+- [x] `tests/integration/test_training_preview.gd` — `PASS: 20 training preview checks`.
+- [x] Training scene, 120 headless frames — exit 0, no script errors.
+- [ ] Whether the timing windows and error sizes feel fair has not been judged by a player. The numbers are first guesses.
+
 Still not performed: F5 gameplay with a human, Windows export, MCP editor connection.
 
 Do not describe this project as a fully validated production game.

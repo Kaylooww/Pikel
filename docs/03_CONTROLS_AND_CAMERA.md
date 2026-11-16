@@ -39,6 +39,8 @@ Controls are ten named actions in `project.godot` (Project Settings > Input Map)
 - Optional overhead camera for training but competitive aim behavior must be consistent/fair.
 
 ## Swing UX
+**Implemented:** `scripts/gameplay/swing_contact.gd` (`SwingContact.evaluate`) judges a swing from the player position, ball position and ball velocity. Within `clean_reach` of the contact point the swing is comfortable; out to `player_reach` it is stretched and the shot falls short. Timing is the time until the ball reaches a plane `contact_lead` in front of the body: inside `clean_timing_window` is clean, earlier pulls the shot to the hitter's left, later pushes it right, growing to `max_timing_error`. The error is deterministic, so the preview arc shows the real landing point drifting off the cursor marker before the click, and the HUD names the contact quality. All numbers are in the tuning resource. Not yet: handedness, backhand, swing animation phases, charge, and the same judgement for the practice opponent (it still hits perfectly).
+
 - Timing windows derived from authoritative proximity/swing phases and ball velocity, not just animation time.
 - Contact indicators: too early, clean, late, unreachable, illegal volley, net/fault.
 - Predicted shadow/landing marker accessible to color-blind users.

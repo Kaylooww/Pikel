@@ -28,7 +28,7 @@ Progress is tracked here: `[x]` done, `[ ]` open. `prompts/NEXT.md` picks the fi
 - [x] **RP-012 (P0):** Honest trajectory/landing preview and miss feedback.
 - [x] **RP-013 (P0):** Separate in-game and training camera controllers.
 - [x] **RP-014 (P1):** Input action map + rebinding-ready API.
-- [ ] **RP-015 (P1):** Player paddle contact windows and swing quality.
+- [x] **RP-015 (P1):** Player paddle contact windows and swing quality.
 
 ## Sprint 2: legal gameplay
 - [ ] **RP-020 (P0):** Rally event IDs and distinct state transitions.
