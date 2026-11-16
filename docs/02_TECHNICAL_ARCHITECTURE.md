@@ -74,6 +74,6 @@ Use named `.tres` resources for move speeds, swing windows, camera offsets, targ
 - Net collision is swept (`scripts/physics/net_collision.gd`), but a hit only ends the rally: no net bounce and no separate post collider.
 - No spin, drag, timing quality, shot windows, stamina economy or strict kitchen detection yet.
 - Practice opponent is a trivial heuristic, not match AI.
-- No full score/serve state machine, rollback or reconciliation.
+- Rally phases and faults run through `RallyState`/`RallyController`; there is still no serve legality, scoring, rollback or reconciliation.
 - Camera rigs assume the home half; an away-side player needs a mirrored rig. No occlusion handling, zoom or settings yet.
 - Procedural scene visuals are runtime-generated and not finished art.

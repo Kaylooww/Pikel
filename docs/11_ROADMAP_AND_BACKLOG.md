@@ -32,9 +32,9 @@ Progress is tracked here: `[x]` done, `[ ]` open. `prompts/NEXT.md` picks the fi
 
 ## Sprint 2: legal gameplay
 - [x] **RP-020 (P0):** Rally event IDs and distinct state transitions.
-- [ ] **RP-021 (P0):** Two-bounce rule (serve/return/open rally).
+- [x] **RP-021 (P0):** Two-bounce rule (serve/return/open rally).
   - [x] Rule itself: `RallyState` faults a volleyed serve or return (done with RP-020, tested).
-  - [ ] Live play: the ball and players emit `RallyEvent`s and the training rally is adjudicated by `RallyState` instead of the ball's own fault strings.
+  - [x] Live play: the ball and players emit `RallyEvent`s and the training rally is adjudicated by `RallyState` instead of the ball's own fault strings.
 - [ ] **RP-022 (P0):** Legal serves and proper diagonal service landing.
 - [ ] **RP-023 (P0):** NVZ/volley/momentum logic.
 - [ ] **RP-024 (P0):** Side-out score/rotation and match end condition.

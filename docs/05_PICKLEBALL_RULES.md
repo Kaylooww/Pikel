@@ -68,7 +68,12 @@ stateDiagram-v2
 
 `apply(event)` returns false and changes nothing for a duplicate or older event id, an event from another rally, anything after the rally has ended, and anything but the server's hit before the serve. So one contact can never end a rally twice.
 
-Limits: a serve only has to land in on the receiver's half (service courts and serve motion are RP-022); no kitchen or momentum faults (RP-023); the rally winner is recorded but no points are awarded (RP-024); the playable training scene does not use `RallyState` yet.
+A ball that has already bounced in once is a double bounce wherever it lands next, including outside the lines.
+
+### Live play (RP-021)
+`scripts/gameplay/rally_controller.gd` (`RallyController`) numbers events, stamps them with the physics tick, feeds the current `RallyState` and emits `rally_ended` once. The ball (`scripts/physics/ball_controller.gd`) only reports `bounced(position)` and `net_hit(position)`; it no longer decides faults. In the training scene the player's first hit of each practice ball is the serve, so the two-bounce rule applies: the opponent lets the serve bounce, and the player must let the return bounce. The aim line shows "WAIT" while that return is in the air, and volleying it ends the rally with a two-bounce fault. A second click on your own shot is ignored rather than counted as a double hit.
+
+Limits: a serve only has to land in on the receiver's half (service courts and serve motion are RP-022); no kitchen or momentum faults (RP-023); the rally winner is shown but no points are awarded (RP-024); the practice serve is hit from wherever the player stands, with no serve position or motion rules.
 
 ## Scoring engine
 - Implement **traditional side-out scoring** as the competitive default; only serving side scores points.

@@ -52,10 +52,10 @@ func _initialize() -> void:
     custom.drive_speed = 10.0
     custom.dink_speed = 5.0
     ball.reset_ball(Vector3(0, 1.0, 5.0))
-    ball.launch(Vector3(0, 0, -5.0), false, 1)
+    ball.launch(Vector3(0, 0, -5.0), false)
     _assert(is_equal_approx(ball.ball_velocity.z, -10.0), "drive uses drive_speed")
     ball.reset_ball(Vector3(0, 1.0, 5.0))
-    ball.launch(Vector3(0, 0, -5.0), true, 1)
+    ball.launch(Vector3(0, 0, -5.0), true)
     _assert(is_equal_approx(ball.ball_velocity.z, -5.0), "dink uses dink_speed")
     ball.free()
 
