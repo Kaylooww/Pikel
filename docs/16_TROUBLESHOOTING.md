@@ -13,7 +13,7 @@
 **GLB too big/small:** check Blender units, applied transform and Godot import root scale. **Facing backward:** confirm model's actual forward orientation and wrapper transform rather than changing input signs randomly. **Animation missing:** inspect armature/action export and imported AnimationPlayer. **Court mesh mismatches hit detection:** core gameplay uses numeric court dimensions; visual lines must be aligned with those numbers.
 
 ## Physics/gameplay issues
-**Ball passes through net:** current net implementation is approximate; implement swept collision and add a regression test. **Ball feels floaty:** tune shot timing and drag only with test fixtures; don't increase gravity independently across clients. **Opponent misses:** practice bot is intentionally simple and may not return difficult balls. **No official score:** score/serve state machine is planned, not implemented.
+**Ball passes through net:** the net check is swept (`scripts/physics/net_collision.gd`); reproduce the case in `tests/unit/test_net_collision.gd` before changing it. **Ball feels floaty:** tune shot timing and drag only with test fixtures; don't increase gravity independently across clients. **Opponent misses:** practice bot is intentionally simple and may not return difficult balls. **No official score:** score/serve state machine is planned, not implemented.
 
 ## Where to report failures
 Include exact Godot version, script file and line, full error, OS, reproduction steps, and if available a screenshot. Use `docs/10_TESTING_AND_QA.md` bug template.
