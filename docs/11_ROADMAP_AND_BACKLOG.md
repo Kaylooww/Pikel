@@ -35,7 +35,7 @@ Progress is tracked here: `[x]` done, `[ ]` open. `prompts/NEXT.md` picks the fi
 - [x] **RP-021 (P0):** Two-bounce rule (serve/return/open rally).
   - [x] Rule itself: `RallyState` faults a volleyed serve or return (done with RP-020, tested).
   - [x] Live play: the ball and players emit `RallyEvent`s and the training rally is adjudicated by `RallyState` instead of the ball's own fault strings.
-- [ ] **RP-022 (P0):** Legal serves and proper diagonal service landing.
+- [x] **RP-022 (P0):** Legal serves and proper diagonal service landing.
 - [ ] **RP-023 (P0):** NVZ/volley/momentum logic.
 - [ ] **RP-024 (P0):** Side-out score/rotation and match end condition.
 - [ ] **RP-025 (P1):** Full local singles with bot or second controller.

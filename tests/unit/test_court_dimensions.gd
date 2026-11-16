@@ -43,6 +43,18 @@ func _initialize() -> void:
     _assert(not C.legal_serve_target(Vector3(0.03, 0, -4.0), true, true), "serve past centerline is a fault")
     _assert(C.legal_serve_target(Vector3(-C.HALF_WIDTH, 0, -C.HALF_LENGTH), true, true), "serve on far corner is in")
     _assert(not C.legal_serve_target(Vector3(-C.HALF_WIDTH - 0.001, 0, -4.0), true, true), "serve wide is a fault")
+    # Serve position: behind the baseline, in the half the server serves from (RP-022).
+    var back: float = C.HALF_LENGTH + 0.3
+    _assert(C.legal_serve_position(Vector3(1.5, 0, back), true, true), "home right-court server stands at +x behind the baseline")
+    _assert(not C.legal_serve_position(Vector3(-1.5, 0, back), true, true), "home right-court server may not stand on the left half")
+    _assert(C.legal_serve_position(Vector3(-1.5, 0, back), true, false), "home left-court server stands at -x")
+    _assert(not C.legal_serve_position(Vector3(1.5, 0, C.HALF_LENGTH), true, true), "standing on the baseline is a foot fault")
+    _assert(not C.legal_serve_position(Vector3(1.5, 0, 5.0), true, true), "standing inside the court is a foot fault")
+    _assert(not C.legal_serve_position(Vector3(C.HALF_WIDTH + 0.2, 0, back), true, true), "standing outside the sideline extension is a fault")
+    _assert(C.legal_serve_position(Vector3(0.0, 0, back), true, true), "the centre mark itself is allowed")
+    _assert(C.legal_serve_position(Vector3(-1.5, 0, -back), false, true), "away right-court server stands at -x behind their baseline")
+    _assert(not C.legal_serve_position(Vector3(1.5, 0, -back), false, true), "away right-court server may not stand at +x")
+    _assert(not C.legal_serve_position(Vector3(-1.5, 0, back), false, true), "away server may not serve from the home end")
     if errors.is_empty():
         print("PASS: %d court dimension checks" % checks)
         quit(0)

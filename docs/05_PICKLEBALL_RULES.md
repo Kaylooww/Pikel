@@ -65,6 +65,8 @@ stateDiagram-v2
 | `DOUBLE_BOUNCE` | second bounce before a return | side that let it bounce |
 | `VOLLEY_BEFORE_BOUNCE` | serve or return hit out of the air | the side that volleyed |
 | `DOUBLE_HIT` | same side hits twice in a row | that side |
+| `SERVE_POSITION` | server not behind the baseline, or outside the half they serve from | server |
+| `SERVE_COURT` | serve lands in the kitchen (line included) or the wrong service court | server |
 
 `apply(event)` returns false and changes nothing for a duplicate or older event id, an event from another rally, anything after the rally has ended, and anything but the server's hit before the serve. So one contact can never end a rally twice.
 
@@ -73,7 +75,14 @@ A ball that has already bounced in once is a double bounce wherever it lands nex
 ### Live play (RP-021)
 `scripts/gameplay/rally_controller.gd` (`RallyController`) numbers events, stamps them with the physics tick, feeds the current `RallyState` and emits `rally_ended` once. The ball (`scripts/physics/ball_controller.gd`) only reports `bounced(position)` and `net_hit(position)`; it no longer decides faults. In the training scene the player's first hit of each practice ball is the serve, so the two-bounce rule applies: the opponent lets the serve bounce, and the player must let the return bounce. The aim line shows "WAIT" while that return is in the air, and volleying it ends the rally with a two-bounce fault. A second click on your own shot is ignored rather than counted as a double hit.
 
-Limits: a serve only has to land in on the receiver's half (service courts and serve motion are RP-022); no kitchen or momentum faults (RP-023); the rally winner is shown but no points are awarded (RP-024); the practice serve is hit from wherever the player stands, with no serve position or motion rules.
+### Serves (RP-022)
+`RallyState` takes `serve_from_right` and checks two things. At the serve hit, `CourtDimensions.legal_serve_position` requires the server's feet behind their baseline (on the line is a foot fault) and between the centerline and sideline extensions of the half they serve from. At the serve's first bounce, `legal_serve_target` requires the diagonal service court. `RallyEvent.player_position` carries the hitter's feet for this.
+
+**Design choice:** every serve is treated as a drop serve, which has no upward-swing, waist-height or paddle-position restrictions, so no swing motion is checked. The drop and its bounce are not simulated; the ball starts in the server's hand. A player is one ground point, not two feet.
+
+In the training scene each new ball puts the player on a legal serve spot in the right court. The aim line reads "SERVE FAULT IF HIT" with the reason when the position or target is illegal; the serve can still be hit and is then called.
+
+Limits: always the right court, because choosing the side needs the score (RP-024); a serve that clips the net is a fault because the net stops the ball, although the real rule plays it; no kitchen or momentum faults (RP-023); the rally winner is shown but no points are awarded (RP-024).
 
 ## Scoring engine
 - Implement **traditional side-out scoring** as the competitive default; only serving side scores points.

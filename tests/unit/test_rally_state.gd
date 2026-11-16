@@ -79,6 +79,37 @@ func _initialize() -> void:
     _bounce(r, Vector3(0.0, 0.0, -9.0))
     _assert(_ended(r, F.OUT, HOME), "long serve is a fault on the server")
 
+    # Serve position and service court (RP-022). Home serves from the right court.
+    r = RallyState.new(1, HOME, true)
+    r.apply(RallyEvent.hit(_id(), 1, 0, HOME, Vector3.ZERO, Vector3(1.5, 0.0, 6.0)))
+    _assert(_ended(r, F.SERVE_POSITION, HOME), "serving from inside the court is a foot fault")
+    r = RallyState.new(1, HOME, true)
+    r.apply(RallyEvent.hit(_id(), 1, 0, HOME, Vector3.ZERO, Vector3(-1.5, 0.0, 7.0)))
+    _assert(_ended(r, F.SERVE_POSITION, HOME), "serving from the wrong half is a fault")
+    r = RallyState.new(1, HOME, true)
+    _hit(r, HOME)
+    _bounce(r, Vector3(1.5, 0.0, -4.0))
+    _assert(_ended(r, F.SERVE_COURT, HOME), "serve landing straight ahead is a service fault")
+    r = RallyState.new(1, HOME, true)
+    _hit(r, HOME)
+    _bounce(r, Vector3(-1.5, 0.0, -1.0))
+    _assert(_ended(r, F.SERVE_COURT, HOME), "serve landing in the kitchen is a service fault")
+    r = RallyState.new(1, HOME, true)
+    _hit(r, HOME)
+    _bounce(r, Vector3(-1.5, 0.0, -CourtDimensions.KITCHEN_DEPTH))
+    _assert(_ended(r, F.SERVE_COURT, HOME), "serve on the kitchen line is a service fault")
+    r = RallyState.new(1, HOME, true)
+    _hit(r, HOME)
+    _assert(_bounce(r, Vector3(-1.5, 0.0, -4.0)) and r.phase == P.WAITING_FOR_RETURN, "serve into the diagonal court is good")
+    r = RallyState.new(1, HOME, false)
+    r.apply(RallyEvent.hit(_id(), 1, 0, HOME, Vector3.ZERO, Vector3(-1.5, 0.0, 7.0)))
+    _assert(r.phase == P.SERVE_IN_FLIGHT, "left-court serve is taken from the left half")
+    _bounce(r, Vector3(-1.5, 0.0, -4.0))
+    _assert(_ended(r, F.SERVE_COURT, HOME), "left-court serve must go to the other diagonal")
+    r = _open_rally(HOME)
+    _hit(r, HOME)
+    _assert(_bounce(r, Vector3(1.5, 0.0, -1.0)) and not r.is_over(), "after the serve, any spot in the court is fine, kitchen included")
+
     # Mirrored: away serves.
     r = RallyState.new(2, AWAY)
     _assert(not _hit(r, HOME) and r.phase == P.WAITING_FOR_SERVE, "only the server can start the rally")
@@ -91,7 +122,7 @@ func _initialize() -> void:
     # Events that must be ignored.
     r = RallyState.new(3, HOME)
     _assert(not _bounce(r, AWAY_COURT) and r.log.is_empty(), "a bounce before the serve is ignored")
-    var serve: RallyEvent = RallyEvent.hit(_id(), 3, 10, HOME)
+    var serve: RallyEvent = RallyEvent.hit(_id(), 3, 10, HOME, Vector3.ZERO, Vector3(1.5, 0.0, 7.0))
     _assert(r.apply(serve) and not r.apply(serve), "the same event applied twice counts once")
     _assert(r.phase == P.SERVE_IN_FLIGHT and r.log.size() == 1, "a duplicate does not cause a double-hit fault")
     _assert(not r.apply(RallyEvent.bounce(serve.id - 1, 3, 11, AWAY_COURT)), "an older event id is ignored")
@@ -125,8 +156,9 @@ func _id() -> int:
     next_id += 1
     return next_id
 
+## A hit by `side`, standing on that side's legal right-court serve spot.
 func _hit(r: RallyState, side: int) -> bool:
-    return r.apply(RallyEvent.hit(_id(), r.rally_id, 0, side))
+    return r.apply(RallyEvent.hit(_id(), r.rally_id, 0, side, Vector3.ZERO, Vector3(1.5 * side, 0.0, 7.0 * side)))
 
 func _bounce(r: RallyState, at: Vector3) -> bool:
     return r.apply(RallyEvent.bounce(_id(), r.rally_id, 0, at))
