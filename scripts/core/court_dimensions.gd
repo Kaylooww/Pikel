@@ -1,7 +1,9 @@
 extends RefCounted
 class_name CourtDimensions
 ## Canonical court dimensions in meters, centered on the net at world z=0.
-## x is width, +z is the local home half; y is height.
+## x is width, +z is the local home half; y is height. A player facing -z has +x on their right.
+## All dimensions are measured to the OUTSIDE edge of the lines, so lines are in.
+## Positions passed to predicates are the ball's contact point (its center projected to the floor).
 const WIDTH: float = 6.096
 const LENGTH: float = 13.4112
 const HALF_WIDTH: float = WIDTH / 2.0
@@ -9,31 +11,41 @@ const HALF_LENGTH: float = LENGTH / 2.0
 const KITCHEN_DEPTH: float = 2.1336
 const NET_CENTER_HEIGHT: float = 0.8636
 const NET_SIDE_HEIGHT: float = 0.9144
-const NET_HALF_WIDTH: float = HALF_WIDTH + 0.15 # matches the prototype net mesh; regulation posts are 22 ft apart (3.3528)
+const NET_HALF_WIDTH: float = 3.3528 # posts are 22 ft apart, 1 ft outside each sideline
 const LINE_WIDTH: float = 0.0508
 const BALL_VISUAL_RADIUS: float = 0.105 # deliberately exaggerated for readability
 
-static func inside_court(pos: Vector3, tolerance: float = 0.01) -> bool:
+## Vector3 stores 32-bit floats, so a point exactly on a line edge can round a hair outside.
+## 0.1 mm absorbs that rounding and nothing else.
+const LINE_EPSILON: float = 0.0001
+
+## Boundary lines are in.
+static func inside_court(pos: Vector3, tolerance: float = LINE_EPSILON) -> bool:
     return absf(pos.x) <= HALF_WIDTH + tolerance and absf(pos.z) <= HALF_LENGTH + tolerance
 
-static func inside_kitchen(pos: Vector3, tolerance: float = 0.01) -> bool:
+## The non-volley-zone line is part of the kitchen.
+static func inside_kitchen(pos: Vector3, tolerance: float = LINE_EPSILON) -> bool:
     return inside_court(pos, tolerance) and absf(pos.z) <= KITCHEN_DEPTH + tolerance
 
 ## Net top height: 34 in at center rising linearly to 36 in at the sidelines.
 static func net_height_at(x: float) -> float:
     return lerpf(NET_CENTER_HEIGHT, NET_SIDE_HEIGHT, minf(absf(x) / HALF_WIDTH, 1.0))
 
+## +1 is the home half (z >= 0), -1 the away half.
 static func side_from_z(z: float) -> int:
     return 1 if z >= 0.0 else -1
 
+## A serve must land in the receiver's service court diagonally opposite the server.
+## Sideline, baseline and centerline are in; the kitchen line is a fault.
 static func legal_serve_target(pos: Vector3, serving_from_home: bool, serve_from_right: bool) -> bool:
-    if not inside_court(pos) or absf(pos.z) <= KITCHEN_DEPTH:
+    if not inside_court(pos) or inside_kitchen(pos):
         return false
     if serving_from_home and pos.z >= 0.0:
         return false
     if not serving_from_home and pos.z <= 0.0:
         return false
-    # Right-side server (from their own perspective) serves cross-court.
-    # Home team looks toward -Z; their right is -X. Away team looks toward +Z; their right is +X.
-    var required_target_x_positive: bool = serve_from_right if serving_from_home else not serve_from_right
-    return pos.x >= 0.0 if required_target_x_positive else pos.x <= 0.0
+    # Home faces -z, so their right court is +x and its diagonal is -x on the away half.
+    # Away faces +z, so their right court is -x and its diagonal is +x on the home half.
+    var target_x_positive: bool = serve_from_right != serving_from_home
+    var half_line: float = LINE_WIDTH / 2.0 # the centerline belongs to both service courts
+    return pos.x >= -half_line if target_x_positive else pos.x <= half_line

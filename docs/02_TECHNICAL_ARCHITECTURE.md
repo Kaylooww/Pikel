@@ -69,7 +69,7 @@ Use named `.tres` resources for move speeds, swing windows, camera offsets, targ
 - Use explicit typed signals; write tests before changing core service/score rules.
 
 ## Known technical debt in this scaffold
-- Net collision is swept (`scripts/physics/net_collision.gd`), but a hit only ends the rally: no net bounce, no separate post collider, and net width follows the prototype mesh rather than regulation 22 ft.
+- Net collision is swept (`scripts/physics/net_collision.gd`), but a hit only ends the rally: no net bounce and no separate post collider.
 - No spin, drag, timing quality, shot windows, stamina economy or strict kitchen detection yet.
 - Practice opponent is a trivial heuristic, not match AI.
 - No full score/serve state machine, rollback or reconciliation.
