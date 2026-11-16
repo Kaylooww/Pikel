@@ -54,6 +54,22 @@ stateDiagram-v2
   AwardAndRotate --> MatchOver: target score + winning margin
 ```
 
+### Implemented (RP-020)
+`scripts/rules/rally_event.gd` defines `RallyEvent` (`id`, `rally_id`, `tick`, `type` = HIT / BOUNCE / NET, `side`, `position`). `scripts/rules/rally_state.gd` (`RallyState`) is the state machine above, without `AwardAndRotate` and `MatchOver`, which belong to scoring (RP-024). It is pure and pinned by `tests/unit/test_rally_state.gd`.
+
+| Fault | Raised when | Charged to |
+|---|---|---|
+| `NET` | ball is stopped by the net | last hitter |
+| `OUT` | bounce outside the court (lines are in) | last hitter |
+| `OWN_SIDE` | bounce on the hitter's own half | last hitter |
+| `DOUBLE_BOUNCE` | second bounce before a return | side that let it bounce |
+| `VOLLEY_BEFORE_BOUNCE` | serve or return hit out of the air | the side that volleyed |
+| `DOUBLE_HIT` | same side hits twice in a row | that side |
+
+`apply(event)` returns false and changes nothing for a duplicate or older event id, an event from another rally, anything after the rally has ended, and anything but the server's hit before the serve. So one contact can never end a rally twice.
+
+Limits: a serve only has to land in on the receiver's half (service courts and serve motion are RP-022); no kitchen or momentum faults (RP-023); the rally winner is recorded but no points are awarded (RP-024); the playable training scene does not use `RallyState` yet.
+
 ## Scoring engine
 - Implement **traditional side-out scoring** as the competitive default; only serving side scores points.
 - Track team/individual scores, current service team, server number (for doubles), player positions, right/left court assignment, first service sequence nuance, win-by-two and score cap/match configuration.
@@ -77,4 +93,4 @@ The kitchen is not forbidden ground. Standing there is allowed; hitting an airbo
 | Team scores while receiving under traditional rules | Side-out rather than point |
 
 ## Known starter status
-`RulesEngine` has **only helper geometry and diagonal-target predicates**; full serve/scoring state transitions and kitchen/momentum logic are **not implemented**. The practice HUD explicitly avoids claiming official scoring.
+`RulesEngine` has helper geometry and diagonal-target predicates. Rally phases and basic faults are in `RallyState` (above). Serve legality, kitchen/momentum logic and scoring are **not implemented**. The practice HUD explicitly avoids claiming official scoring.

@@ -21,4 +21,6 @@ if ($LASTEXITCODE -ne 0) { throw "Godot camera checks failed: $LASTEXITCODE" }
 if ($LASTEXITCODE -ne 0) { throw "Godot input checks failed: $LASTEXITCODE" }
 & $Godot --headless --path . --script res://tests/unit/test_swing_contact.gd
 if ($LASTEXITCODE -ne 0) { throw "Godot swing contact checks failed: $LASTEXITCODE" }
+& $Godot --headless --path . --script res://tests/unit/test_rally_state.gd
+if ($LASTEXITCODE -ne 0) { throw "Godot rally state checks failed: $LASTEXITCODE" }
 Write-Host "Basic Godot checks passed. Manual F6/F5 gameplay playtesting is still required."
