@@ -22,7 +22,8 @@
 | Local player WASD and Shift | Starter implementation |
 | Cursor projected onto opposite half | Starter implementation |
 | Left-click drive, right-click soft hit | Starter implementation |
-| Ball flight, gravity, bounce, simplified net contact | **Approximation**; needs tuning and robust swept collisions |
+| Ball flight, gravity, bounce | **Approximation**; needs tuning |
+| Net contact | Swept sphere-vs-net test with 11 unit checks; a hit still just ends the rally (no net bounce) |
 | Scripted practice opponent | Very basic demonstration, not a complete AI player |
 | Court bounds/kitchen/simple serve predicates | Starter helpers and seven smoke checks |
 | Real serves, legal scoring, two-bounce enforcement | **Not implemented** |
@@ -73,6 +74,7 @@ RallyPop_Pickleball_Godot_Starter/
 - [docs/15_REFERENCE_INDEX.md](docs/15_REFERENCE_INDEX.md) — image map.
 - [docs/16_TROUBLESHOOTING.md](docs/16_TROUBLESHOOTING.md) — known setup pitfalls.
 - [docs/17_SOURCES.md](docs/17_SOURCES.md) — official references and verified integration options.
+- [docs/19_GITHUB_RULES.md](docs/19_GITHUB_RULES.md) — GitHub rules, commit format and push steps.
 
 ## Important limitations
 

@@ -36,13 +36,10 @@ func _physics_process(delta: float) -> void:
     var previous: Vector3 = position
     ball_velocity.y -= GRAVITY * delta
     position += ball_velocity * delta
-    # Basic net-plane collision (a more precise swept solver is a later task).
+    if NetCollision.hits_net(previous, position, RADIUS):
+        _signal_fault("NET — reset rally")
+        return
     if previous.z * position.z <= 0.0 and absf(previous.z - position.z) > 0.0001:
-        var crossing_fraction: float = absf(previous.z) / absf(previous.z - position.z)
-        var crossing_height: float = lerpf(previous.y, position.y, crossing_fraction)
-        if crossing_height < CourtDimensions.NET_CENTER_HEIGHT + RADIUS:
-            _signal_fault("NET — reset rally")
-            return
         current_side = CourtDimensions.side_from_z(position.z)
         bounces_this_half = 0
     if position.y <= RADIUS and ball_velocity.y < 0.0:
