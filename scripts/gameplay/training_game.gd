@@ -17,6 +17,8 @@ var dink_preview: TrajectoryPreview
 var aim_label: Label
 var shot_label: Label
 var shot_target: Vector3 = Vector3.ZERO ## where the player's last shot was aimed
+var awaiting_landing: bool = false ## the player's shot is in the air and has not landed yet
+var referee := RallyController.new()
 var status_label: Label
 var score_label: Label
 var player_hits: int = 0
@@ -38,9 +40,10 @@ func _ready() -> void:
     ball.get_node("Visual").material_override = ball_material
     camera.target = player
     camera.snap()
-    _reset_ball()
     ball.bounced.connect(_on_ball_bounced)
-    ball.fault.connect(_on_ball_fault)
+    ball.net_hit.connect(_on_ball_net_hit)
+    referee.rally_ended.connect(_on_rally_ended)
+    _reset_ball()
     marker = MeshInstance3D.new()
     var marker_mesh := CylinderMesh.new()
     marker_mesh.top_radius = 0.30
@@ -91,7 +94,8 @@ func _process(_delta: float) -> void:
         bot.ai_direction = (want - bot.position).normalized() if ball.position.z < 1.0 else (Vector3(0, 0, -5.1) - bot.position).normalized()
         if bot_should_return and ball.position.z < -0.2 and ball.position.distance_to(bot.position + Vector3.UP * tuning.bot_contact_height) < tuning.bot_reach:
             bot_should_return = false
-            if ball.launch(Vector3(clampf(player.position.x, -2.4, 2.4), 0.0, 4.55), false, -1).ok:
+            if ball.launch(Vector3(clampf(player.position.x, -2.4, 2.4), 0.0, 4.55), false).ok:
+                referee.hit(-1, ball.position)
                 bot_hits += 1
                 _update_score()
                 _set_status("Opponent returned the ball. Wait for a bounce, then hit it!")
@@ -122,6 +126,12 @@ func _update_aim_preview() -> void:
         marker_material.albedo_color = AIM_IDLE
         aim_label.text = "AIM  —  ball not in reach"
         return
+    if _must_bounce_first():
+        drive_preview.show_points(PackedVector3Array())
+        dink_preview.show_points(PackedVector3Array())
+        marker_material.albedo_color = AIM_BLOCKED
+        aim_label.text = "WAIT  —  let the return bounce first (two-bounce rule)"
+        return
     # The arcs use the real target, so a mistimed or stretched swing visibly drifts off the marker.
     var contact: SwingContact.Contact = _contact()
     var real_target: Vector3 = contact.apply(target_position)
@@ -144,6 +154,10 @@ func _preview_shot(view: TrajectoryPreview, real_target: Vector3, soft: bool) ->
 func _contact() -> SwingContact.Contact:
     return SwingContact.evaluate(player.position, ball.position, ball.ball_velocity, 1, tuning)
 
+## True while the opponent's return is in the air and the rules require it to bounce.
+func _must_bounce_first() -> bool:
+    return referee.rally.phase == RallyState.Phase.RETURN_IN_FLIGHT and referee.rally.last_hitter == -1
+
 func _ball_in_reach() -> bool:
     return ball.position.z > 0.0 and _contact().in_reach
 
@@ -154,19 +168,23 @@ func _attempt_hit(soft: bool) -> void:
     if ball.position.z <= 0.0:
         _set_status("Ball is still on the other half.")
         return
+    if referee.rally.last_hitter == 1:
+        return # your own shot is still in play; a second click must not count as a second hit
     var contact: SwingContact.Contact = _contact()
     if not contact.in_reach:
         _set_status("Too far from ball — move closer.")
         return
-    var shot: ShotSolver.Solution = ball.launch(contact.apply(target_position), soft, 1)
+    var shot: ShotSolver.Solution = ball.launch(contact.apply(target_position), soft)
     if not shot.ok:
         _set_status("%s (contact: %s)" % [_refusal_text(shot.reason), contact.label()])
         return
+    awaiting_landing = true
     shot_target = target_position
     landing_marker.visible = false
     player_hits += 1
     _update_score()
     _set_status("%s  —  %s" % ["DINK" if soft else "DRIVE", contact.label()])
+    referee.hit(1, ball.position) # may end the rally at once, e.g. volleying the return
 
 func _refusal_text(reason: ShotSolver.Reason) -> String:
     match reason:
@@ -174,32 +192,57 @@ func _refusal_text(reason: ShotSolver.Reason) -> String:
         ShotSolver.Reason.TOO_FAST: return "Too far for that shot."
         _: return "That swing would send the ball out."
 
-func _on_ball_bounced(side: int, count: int, contact: Vector3) -> void:
-    if side == -1 and count == 1 and ball.last_hitter == 1:
-        bot_should_return = true
+func _on_ball_bounced(contact: Vector3) -> void:
+    if awaiting_landing:
+        awaiting_landing = false
         landing_marker.position = Vector3(contact.x, 0.11, contact.z)
         landing_marker.visible = true
         var miss_cm: float = Vector2(contact.x - shot_target.x, contact.z - shot_target.z).length() * 100.0
         # Own label: the status line is overwritten as soon as the opponent swings.
         shot_label.text = "LAST SHOT  —  landed %d cm from your target (coral dot)" % roundi(miss_cm)
+    referee.bounce(contact)
+    if referee.rally.is_over():
+        return
+    if referee.rally.last_hitter == 1:
+        bot_should_return = true
         _set_status("Opponent preparing a return …")
-    elif side == 1 and count == 1:
+    else:
         _set_status("Bounce on your side — return it!")
 
-func _on_ball_fault(reason: String) -> void:
-    _set_status(reason)
+func _on_ball_net_hit(contact: Vector3) -> void:
+    awaiting_landing = false
+    referee.net(contact)
+
+## The rules ended the rally: show why, then set up the next practice ball.
+func _on_rally_ended(rally: RallyState) -> void:
+    ball.stop()
+    bot_should_return = false
+    _set_status(_fault_text(rally))
     if resetting:
         return
     resetting = true
-    bot_should_return = false
     await get_tree().create_timer(tuning.fault_reset_delay).timeout
     if is_inside_tree():
         _reset_ball()
 
+func _fault_text(rally: RallyState) -> String:
+    var what: String
+    match rally.fault:
+        RallyState.Fault.NET: what = "NET"
+        RallyState.Fault.OUT: what = "OUT"
+        RallyState.Fault.OWN_SIDE: what = "DID NOT CROSS THE NET"
+        RallyState.Fault.DOUBLE_BOUNCE: what = "DOUBLE BOUNCE"
+        RallyState.Fault.VOLLEY_BEFORE_BOUNCE: what = "TWO-BOUNCE RULE — the ball had to bounce first"
+        _: what = "DOUBLE HIT"
+    return "%s  —  %s" % [what, "you win the rally" if rally.winner_side == 1 else "opponent wins the rally"]
+
+## New practice ball in the player's hand. The player's first hit is the serve.
 func _reset_ball() -> void:
     var spawn: Vector3 = player.position + Vector3(0.35, 1.00, -0.85)
     spawn.z = maxf(spawn.z, tuning.min_net_distance) # never spawn on the opponent's half
     ball.reset_ball(spawn)
+    referee.start(1)
+    awaiting_landing = false
     bot_should_return = false
     resetting = false
 

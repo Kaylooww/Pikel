@@ -56,6 +56,7 @@ func _run() -> void:
     _assert(game.shot_label.text.contains("cm from your target"), "HUD reports the miss distance")
 
     # A late, stretched swing: the preview and the real shot both drift off the aim point (RP-015).
+    game._reset_ball() # new rally, so this swing is a fresh serve
     game.landing_marker.visible = false
     game.ball.reset_ball(game.player.position + Vector3(1.2, 0.95, 0.8))
     game.ball.ball_velocity = Vector3(0.0, 0.0, 8.0) # flying past the player

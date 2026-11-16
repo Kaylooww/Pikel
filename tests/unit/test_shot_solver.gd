@@ -70,7 +70,7 @@ func _initialize() -> void:
     # A refused shot leaves the ball alone.
     var ball: PickleballBall = BALL_SCENE.instantiate()
     ball.reset_ball(Vector3(0.0, 0.3, 0.4))
-    _assert(not ball.launch(Vector3(0.0, 0.0, -6.5), false, 1).ok and not ball.moving, "refused shot does not move the ball")
+    _assert(not ball.launch(Vector3(0.0, 0.0, -6.5), false).ok and not ball.moving, "refused shot does not move the ball")
     ball.free()
 
     if errors.is_empty():
@@ -86,11 +86,13 @@ func _fly(origin: Vector3, target: Vector3, soft: bool, tuning: GameplayTuning) 
     ball.tuning = tuning
     landing = Vector3.INF
     fault_reason = ""
-    ball.bounced.connect(func(_side: int, _count: int, point: Vector3) -> void:
-        if landing == Vector3.INF: landing = point)
-    ball.fault.connect(func(reason: String) -> void: fault_reason = reason)
+    ball.bounced.connect(func(point: Vector3) -> void:
+        if landing == Vector3.INF:
+            landing = point
+            if not CourtDimensions.inside_court(point): fault_reason = "OUT")
+    ball.net_hit.connect(func(_point: Vector3) -> void: fault_reason = "NET")
     ball.reset_ball(origin)
-    ball.launch(target, soft, CourtDimensions.side_from_z(origin.z))
+    ball.launch(target, soft)
     for i in range(600):
         if landing != Vector3.INF or fault_reason != "":
             break
