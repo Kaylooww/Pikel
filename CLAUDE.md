@@ -9,7 +9,7 @@ Read `AGENTS.md` first. Then read `README.md`, `docs/02_TECHNICAL_ARCHITECTURE.m
 - Physics/gameplay correctness takes priority over visual polish. Incrementally replace approximations with tested systems.
 - Ensure new scenes/scripts follow naming and module boundaries.
 - Keep short implementation reports, updated tests, and explicit limitations.
-- **When the user says just "next", read `prompts/NEXT.md` and follow it:** build the next open backlog task, verify, commit and push.
+- **When the user says just "continue" (or "next"), read `prompts/NEXT.md` and follow it:** branch from `main`, build the next open backlog task, verify, commit, push the branch, then ask the user to merge. After the merge, delete the branch and wait for "continue".
 - Commits follow `<commit type>: <short description>`; see `docs/19_GITHUB_RULES.md`.
 - The initial kickoff prompt is `prompts/MASTER_STARTING_PROMPT.md`.
 - Never pretend you ran Godot, connected an MCP editor, built a game, or observed screenshots if you did not.

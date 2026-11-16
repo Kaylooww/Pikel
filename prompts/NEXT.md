@@ -1,8 +1,8 @@
-# NEXT — what to do when the user says "next"
+# NEXT — what to do when the user says "continue" or "next"
 
-When the user's whole message is "next" (any capitalisation or punctuation), they are asking you to build the next piece of RallyPop Pickleball on your own: pick the next backlog task, implement it, prove it works, commit it, push it, and report. They do not want to be asked what to work on. This file is the full brief for that one word.
+When the user's whole message is "continue" or "next" (any capitalisation or punctuation), they are asking you to build the next piece of RallyPop Pickleball on your own: pick the next backlog task, branch out, implement it, prove it works, commit it, push the branch, and ask them to merge it. They do not want to be asked what to work on. This file is the full brief for that one word.
 
-The user is building this game one small verified step at a time. Each "next" should leave the repository in a state where the game still imports and every test passes, with exactly one backlog task further along. A small finished task is worth more than a large half-finished one, because the user reviews each step and a later "next" builds on it.
+The user is building this game one small verified step at a time. Each "continue" should leave the repository in a state where the game still imports and every test passes, with exactly one backlog task further along. A small finished task is worth more than a large half-finished one, because the user reviews each step and a later "continue" builds on it.
 
 ## 1. Find out where things stand
 
@@ -10,12 +10,14 @@ Run `git status -sb`, `git branch -a` and `git log --oneline -5`.
 
 - If the working tree has uncommitted changes you did not make in this session, stop and ask the user what they are. Do not commit, stash or discard someone else's work.
 - Run `git fetch origin` so you know what has been merged.
+- If a branch from an earlier task is not merged into `origin/main` yet, do not start new work and do not stack a new branch on it. Ask the user to merge it (or to tell you to merge it), and stop. One branch is open at a time.
+- If an earlier branch has been merged but still exists, delete it locally and on GitHub before starting.
 
 ## 2. Pick the task
 
 `docs/11_ROADMAP_AND_BACKLOG.md` is the single source of truth for progress. Tasks are checkboxes: `[x]` is done, `[ ]` is open.
 
-Take the first open task in the lowest-numbered sprint, P0 tasks before P1 tasks, in ID order. Do exactly one task per "next".
+Take the first open task in the lowest-numbered sprint, P0 tasks before P1 tasks, in ID order. Do exactly one task per "continue".
 
 Skip a task, and say that you skipped it and why, when:
 
@@ -23,7 +25,7 @@ Skip a task, and say that you skipped it and why, when:
 - **It needs approval first.** `AGENTS.md` and `prompts/MASTER_STARTING_PROMPT.md` require a human decision before external SDKs or services, paid infrastructure, an engine change, a large architecture migration, or a public release. For these, write the proposal in your reply and stop instead of building.
 - **Its dependency is still open.** Do the dependency instead.
 
-If a task is too large to finish and verify in one session (most of Sprint 3 and 4 are), do its first testable slice. Add the remaining slices as indented open checkboxes under the task in the roadmap so the next "next" continues from there, and leave the parent unticked until all slices are done.
+If a task is too large to finish and verify in one session (most of Sprint 3 and 4 are), do its first testable slice. Add the remaining slices as indented open checkboxes under the task in the roadmap so the next "continue" picks up from there, and leave the parent unticked until all slices are done.
 
 If no open task is left that you can do, say so, list what is waiting on a human, and stop.
 
@@ -35,8 +37,7 @@ Read `AGENTS.md`, the spec in `docs/` that covers the task (physics → 04, rule
 
 Branch names and commit messages follow `docs/19_GITHUB_RULES.md`: branch `<commit type>/<short-kebab-description>`, commit `<commit type>: <short description>`. Never commit on `main`.
 
-- If the previous task's branch has been merged, branch from an up-to-date `main`.
-- If it has not been merged yet, branch from that previous branch so your work includes it, and tell the user the branches are stacked and should be merged in order. The user often says "next" before merging; that should not block progress.
+Always branch from an up-to-date `main` (`git checkout main`, `git pull origin main`, `git checkout -b <branch>`). Section 1 already guaranteed that nothing unmerged is outstanding.
 
 ## 5. Implement
 
@@ -65,26 +66,34 @@ Headless runs prove the code parses, the tests pass and the scene loads. They do
 - Add the real command results to `docs/18_VALIDATION_STATUS.md`.
 - Fix any other doc your change made untrue.
 
-## 8. Commit and push
+## 8. Commit and push to the branch
 
-The user has asked that every finished "next" ends committed and pushed, so do this without asking.
+The user has asked that every finished task ends committed and pushed to its branch, so do this without asking.
 
 - Stage files by name, not `git add .`, and check `git status` first so nothing unexpected goes in. Include `.uid` and `.import` sidecars. Never stage `.godot/`, `builds/`, `logs/`, `.env` files or anything containing a secret.
 - One logical change per commit. Tests and docs for a feature go in the feature's commit.
 - The user is the sole author. Use the configured git identity and do not add a `Co-Authored-By` trailer.
 - `git push -u origin <branch>`.
-- If the `gh` CLI is available and authenticated, open a pull request into `main` (or into the branch you stacked on) with what changed, the commands run and their output, and known limitations. If `gh` is not available, give the user the pull request link that the push prints.
-- Do not merge the pull request and do not push to `main`. Merging is the user's review step.
 
-## 9. Report
+## 9. Ask for the merge, then clean up
+
+Merging into `main` is the user's decision, so ask and wait. End your report with a direct request: they can merge the branch on GitHub (give the link the push printed), or reply "merge" and you will do it.
+
+- If they tell you to merge: `git checkout main`, `git pull origin main`, `git merge --no-ff <branch> -m "chore: merge <branch> into main"`, `git push origin main`. Rerun the checks on `main` after merging and report the result.
+- If they say they merged on GitHub: `git checkout main`, `git pull origin main`, and confirm the branch is in `origin/main` before going further.
+- Once the merge is confirmed, delete the branch in both places: `git branch -d <branch>` and `git push origin --delete <branch>`. Use `-d`, not `-D`, so git refuses if something is unmerged.
+- Then stop. Tell the user the branch is merged and deleted and that you are waiting for "continue". Do not start the next task on your own.
+
+## 10. Report
 
 Reply briefly, leading with what now works. Include:
 
 - the task ID and one sentence on what it does for the game,
-- the branch, commit hashes and pull request link,
+- the branch, commit hashes and the GitHub link for merging,
 - the commands you ran and their real results,
 - what is still approximate or unverified, including that no human has played it,
 - anything you skipped and why,
-- which task the next "next" will pick up.
+- which task the next "continue" will pick up,
+- the merge request from section 9, as the last thing in the reply.
 
 Never say something was tested, played or seen unless you actually ran it in this session.

@@ -36,9 +36,20 @@ asset: add placeholder paddle glb
 chore: add net collision test to validate scripts
 ```
 
+## Workflow for every feature
+
+1. **Branch out.** Any new feature or implementation starts on a new branch cut from an up-to-date `main`. Nothing is built on `main` itself.
+2. **Build on the branch.** Do the work, run the checks, commit in the format above.
+3. **Push to the branch.** `git push -u origin <branch>`.
+4. **Ask for the merge.** When everything for that feature is implemented and the checks pass, ask the user to merge the branch into `main`. Nothing is merged without the user saying so. The user can merge on GitHub, or tell the agent to merge.
+5. **Delete the branch.** Once it is merged, delete the branch locally and on GitHub.
+6. **Wait for "continue".** No new work starts until the user says "continue".
+
+One branch is open at a time. A new branch is never stacked on an unmerged one.
+
 ## Repository rules
 
-1. **Never commit directly to `main`.** One issue → one branch → one pull request (see `AGENTS.md`).
+1. **Never commit directly to `main`.** One issue → one branch. `main` only changes by merging a finished branch, and only after the user approves the merge.
 2. **Branch names:** `<commit type>/<short-kebab-description>`, for example `feat/swept-net-collision` or `fix/ball-spawn-side`.
 3. **Run the checks before every commit.** Both must exit 0:
    ```powershell
@@ -52,7 +63,7 @@ chore: add net collision test to validate scripts
 8. **Keep commits small.** Do not mix unrelated modules, and do not mix a refactor with a behaviour change.
 9. **Never force-push `main`** and never rewrite history that is already pushed to a shared branch.
 10. **Large binaries** (`.blend`, `.glb`, audio) need team agreement first; Git LFS is not configured yet.
-11. **Pull requests** need: what changed, commands run with their real output, known limitations, and at least one reviewer approval before merge. Do not say "tested" without saying whether it was code inspection, headless import, unit test or live gameplay.
+11. **Merge requests to the user** need: what changed, commands run with their real output, and known limitations. Do not say "tested" without saying whether it was code inspection, headless import, unit test or live gameplay.
 
 ## Commit and push, step by step
 
@@ -78,16 +89,25 @@ git commit -m "feat: add swept net collision for the ball"
 # 6. Push the branch (first push sets the upstream)
 git push -u origin feat/swept-net-collision
 
-# 7. Open a pull request into main on GitHub (or with the CLI)
-gh pr create --base main --title "feat: add swept net collision for the ball"
 ```
 
-After the pull request is merged:
+Then ask the user to merge. If they merge on GitHub, skip step 7. If they tell you to merge:
+
+```powershell
+# 7. Merge into main (only with the user's approval) and push
+git checkout main
+git pull origin main
+git merge --no-ff feat/swept-net-collision -m "chore: merge feat/swept-net-collision into main"
+git push origin main
+```
+
+After the merge, delete the branch in both places and stop until the user says "continue":
 
 ```powershell
 git checkout main
 git pull origin main
 git branch -d feat/swept-net-collision
+git push origin --delete feat/swept-net-collision
 ```
 
 ## Fixing common mistakes
