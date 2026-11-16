@@ -72,6 +72,10 @@ func _on_hit(side: int) -> void:
     bounces_since_hit = 0
 
 func _on_bounce(at: Vector3) -> void:
+    if bounces_since_hit >= 1:
+        # Already bounced in once: wherever it lands next, it was not returned in time.
+        _end(Fault.DOUBLE_BOUNCE, -last_hitter)
+        return
     if not CourtDimensions.inside_court(at):
         _end(Fault.OUT, last_hitter)
         return
@@ -79,9 +83,7 @@ func _on_bounce(at: Vector3) -> void:
         _end(Fault.OWN_SIDE, last_hitter)
         return
     bounces_since_hit += 1
-    if bounces_since_hit >= 2:
-        _end(Fault.DOUBLE_BOUNCE, -last_hitter)
-    elif phase == Phase.SERVE_IN_FLIGHT:
+    if phase == Phase.SERVE_IN_FLIGHT:
         phase = Phase.WAITING_FOR_RETURN
     elif phase == Phase.RETURN_IN_FLIGHT:
         phase = Phase.OPEN_RALLY
