@@ -22,7 +22,8 @@
 | Local player WASD and Shift | Starter implementation |
 | Cursor projected onto opposite half | Starter implementation |
 | Left-click drive, right-click soft hit | Starter implementation |
-| Ball flight, gravity, bounce | **Approximation**; needs tuning |
+| Ball flight, gravity, bounce | No drag or spin; exact parabola and exact landing point; needs tuning |
+| Shot solver | Raises the arc to clear the net and refuses impossible shots; 16 unit checks |
 | Net contact | Swept sphere-vs-net test with 11 unit checks; a hit still just ends the rally (no net bounce) |
 | Scripted practice opponent | Very basic demonstration, not a complete AI player |
 | Court bounds/kitchen/serve-box predicates | Frozen and line-exact; 29 unit checks plus seven smoke checks |

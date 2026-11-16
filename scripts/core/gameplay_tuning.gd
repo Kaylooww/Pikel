@@ -10,7 +10,8 @@ class_name GameplayTuning
 @export var drive_speed: float = 12.0 ## horizontal m/s used to pick a drive's flight time
 @export var dink_speed: float = 8.0
 @export var min_flight_time: float = 0.58
-@export var max_flight_time: float = 1.15
+@export var max_flight_time: float = 1.15 ## longest (highest) arc the solver may use to clear the net
+@export var max_launch_speed: float = 25.0 ## shots needing more than this are refused
 @export_range(0.0, 1.0) var bounce_restitution: float = 0.68 ## vertical speed kept after a bounce
 @export_range(0.0, 1.0) var bounce_friction: float = 0.85 ## horizontal speed kept after a bounce
 

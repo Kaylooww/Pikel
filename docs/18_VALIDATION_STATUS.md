@@ -45,6 +45,14 @@
 - [x] Training scene, 120 headless frames — exit 0, no script errors.
 - [ ] Editing the `.tres` in the Godot inspector has not been tried by a human.
 
+## RP-011 results recorded 2026-11-17 (same machine and Godot build)
+
+- [x] Headless import — exit 0, no errors or warnings printed.
+- [x] `test_rules.gd` 7, `test_net_collision.gd` 11, `test_court_dimensions.gd` 29, `test_gameplay_tuning.gd` 15 — all pass.
+- [x] `test_shot_solver.gd` — `PASS: 16 shot solver checks`.
+- [x] Training scene, 120 headless frames — exit 0, no script errors.
+- [ ] Refused-shot messages and the higher arcs have not been seen or felt by a human.
+
 Still not performed: F5 gameplay with a human, Windows export, MCP editor connection.
 
 Do not describe this project as a fully validated production game.

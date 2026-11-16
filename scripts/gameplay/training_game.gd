@@ -62,10 +62,10 @@ func _process(_delta: float) -> void:
         bot.ai_direction = (want - bot.position).normalized() if ball.position.z < 1.0 else (Vector3(0, 0, -5.1) - bot.position).normalized()
         if bot_should_return and ball.position.z < -0.2 and ball.position.distance_to(bot.position + Vector3.UP * tuning.bot_contact_height) < tuning.bot_reach:
             bot_should_return = false
-            bot_hits += 1
-            ball.launch(Vector3(clampf(player.position.x, -2.4, 2.4), 0.0, 4.55), false, -1)
-            _update_score()
-            _set_status("Opponent returned the ball. Wait for a bounce, then hit it!")
+            if ball.launch(Vector3(clampf(player.position.x, -2.4, 2.4), 0.0, 4.55), false, -1).ok:
+                bot_hits += 1
+                _update_score()
+                _set_status("Opponent returned the ball. Wait for a bounce, then hit it!")
     else:
         bot.ai_direction = Vector3.ZERO
 
@@ -92,10 +92,19 @@ func _attempt_hit(soft: bool) -> void:
     if ball.position.distance_to(player.position + Vector3.UP * tuning.player_contact_height) > tuning.player_reach:
         _set_status("Too far from ball — move closer.")
         return
+    var shot: ShotSolver.Solution = ball.launch(target_position, soft, 1)
+    if not shot.ok:
+        _set_status(_refusal_text(shot.reason))
+        return
     player_hits += 1
-    ball.launch(target_position, soft, 1)
     _update_score()
     _set_status("DINK" if soft else "DRIVE")
+
+func _refusal_text(reason: ShotSolver.Reason) -> String:
+    match reason:
+        ShotSolver.Reason.NET: return "Can't clear the net from here — get under the ball or aim shorter."
+        ShotSolver.Reason.TOO_FAST: return "Too far for that shot."
+        _: return "Aim at the opponent's side."
 
 func _on_ball_bounced(side: int, count: int, _contact: Vector3) -> void:
     if side == -1 and count == 1 and ball.last_hitter == 1:
@@ -115,7 +124,9 @@ func _on_ball_fault(reason: String) -> void:
         _reset_ball()
 
 func _reset_ball() -> void:
-    ball.reset_ball(player.position + Vector3(0.35, 1.00, -0.85))
+    var spawn: Vector3 = player.position + Vector3(0.35, 1.00, -0.85)
+    spawn.z = maxf(spawn.z, tuning.min_net_distance) # never spawn on the opponent's half
+    ball.reset_ball(spawn)
     bot_should_return = false
     resetting = false
 

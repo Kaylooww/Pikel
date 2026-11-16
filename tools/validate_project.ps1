@@ -11,4 +11,6 @@ if ($LASTEXITCODE -ne 0) { throw "Godot net collision checks failed: $LASTEXITCO
 if ($LASTEXITCODE -ne 0) { throw "Godot court dimension checks failed: $LASTEXITCODE" }
 & $Godot --headless --path . --script res://tests/unit/test_gameplay_tuning.gd
 if ($LASTEXITCODE -ne 0) { throw "Godot gameplay tuning checks failed: $LASTEXITCODE" }
+& $Godot --headless --path . --script res://tests/unit/test_shot_solver.gd
+if ($LASTEXITCODE -ne 0) { throw "Godot shot solver checks failed: $LASTEXITCODE" }
 Write-Host "Basic Godot checks passed. Manual F6/F5 gameplay playtesting is still required."
