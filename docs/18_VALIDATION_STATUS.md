@@ -37,6 +37,14 @@
 - [x] Training scene, 120 headless frames — exit 0, no script errors.
 - [ ] Moved court lines and widened net have not been looked at on screen.
 
+## RP-005 results recorded 2026-11-17 (same machine and Godot build)
+
+- [x] Headless import — exit 0, no errors or warnings printed.
+- [x] `test_rules.gd` 7, `test_net_collision.gd` 11, `test_court_dimensions.gd` 29 — all pass.
+- [x] `test_gameplay_tuning.gd` — `PASS: 15 gameplay tuning checks`.
+- [x] Training scene, 120 headless frames — exit 0, no script errors.
+- [ ] Editing the `.tres` in the Godot inspector has not been tried by a human.
+
 Still not performed: F5 gameplay with a human, Windows export, MCP editor connection.
 
 Do not describe this project as a fully validated production game.
