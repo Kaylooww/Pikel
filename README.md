@@ -28,6 +28,7 @@
 | Scripted practice opponent | Very basic demonstration, not a complete AI player |
 | Court bounds/kitchen/serve-box predicates | Frozen and line-exact; 29 unit checks plus seven smoke checks |
 | Gameplay tuning config | `config/gameplay_tuning.tres`; 15 unit checks. Camera values not yet included |
+| Trajectory preview and landing feedback | Dotted arcs for drive and dink from the solver, marker and text for OK / blocked / out of reach, landing dot and miss distance; logic tested headless, **not yet seen on screen** |
 | Real serves, legal scoring, two-bounce enforcement | **Not implemented** |
 | Singles match state machine | **Not implemented** |
 | Online multiplayer, dedicated server, matchmaking | **Not implemented** |

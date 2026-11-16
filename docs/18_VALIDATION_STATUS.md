@@ -53,6 +53,14 @@
 - [x] Training scene, 120 headless frames — exit 0, no script errors.
 - [ ] Refused-shot messages and the higher arcs have not been seen or felt by a human.
 
+## RP-012 results recorded 2026-11-17 (same machine and Godot build)
+
+- [x] Headless import — exit 0, no errors or warnings printed.
+- [x] Unit tests: rules 7, net collision 11, court dimensions 29, gameplay tuning 15, shot solver 24 — all pass.
+- [x] `tests/integration/test_training_preview.gd` — `PASS: 15 training preview checks` (real training scene, headless).
+- [x] Training scene, 120 headless frames — exit 0, no script errors.
+- [ ] The dots, marker colours and HUD lines have not been seen on screen. Headless runs have no renderer, so size, visibility and clutter are unknown.
+
 Still not performed: F5 gameplay with a human, Windows export, MCP editor connection.
 
 Do not describe this project as a fully validated production game.

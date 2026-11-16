@@ -6,7 +6,17 @@ extends Node3D
 @onready var bot: PickleballPlayer = $PracticeOpponent
 @onready var ball: PickleballBall = $Ball
 @onready var camera: Camera3D = $Camera3D
+const AIM_OK := Color(0.33, 0.84, 0.80, 0.70)
+const AIM_BLOCKED := Color(1.0, 0.51, 0.42, 0.70)
+const AIM_IDLE := Color(0.75, 0.78, 0.80, 0.40)
 var marker: MeshInstance3D
+var marker_material: StandardMaterial3D
+var landing_marker: MeshInstance3D
+var drive_preview: TrajectoryPreview
+var dink_preview: TrajectoryPreview
+var aim_label: Label
+var shot_label: Label
+var shot_target: Vector3 = Vector3.ZERO ## where the player's last shot was aimed
 var status_label: Label
 var score_label: Label
 var player_hits: int = 0
@@ -34,7 +44,7 @@ func _ready() -> void:
     marker_mesh.top_radius = 0.30
     marker_mesh.bottom_radius = 0.30
     marker_mesh.height = 0.015
-    var marker_material := StandardMaterial3D.new()
+    marker_material = StandardMaterial3D.new()
     marker_material.albedo_color = Color(0.98, 0.85, 0.35, 0.55)
     marker_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
     marker_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -42,6 +52,24 @@ func _ready() -> void:
     marker.mesh = marker_mesh
     marker.position = Vector3(0, 0.10, -4.5)
     add_child(marker)
+    landing_marker = MeshInstance3D.new()
+    var landing_mesh := CylinderMesh.new()
+    landing_mesh.top_radius = 0.12
+    landing_mesh.bottom_radius = 0.12
+    landing_mesh.height = 0.02
+    var landing_material := StandardMaterial3D.new()
+    landing_material.albedo_color = Color("ff816c")
+    landing_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    landing_mesh.material = landing_material
+    landing_marker.mesh = landing_mesh
+    landing_marker.visible = false
+    add_child(landing_marker)
+    drive_preview = TrajectoryPreview.new()
+    drive_preview.set_color(Color("ffe06b"))
+    add_child(drive_preview)
+    dink_preview = TrajectoryPreview.new()
+    dink_preview.set_color(Color("55d5cb"))
+    add_child(dink_preview)
     _make_environment()
     _make_hud()
     _set_status("Aim on the OPPOSITE court; click while the ball is within reach.")
@@ -55,6 +83,7 @@ func _process(_delta: float) -> void:
             var world: Vector3 = origin + direction * distance
             target_position = Vector3(clampf(world.x, -CourtDimensions.HALF_WIDTH + 0.16, CourtDimensions.HALF_WIDTH - 0.16), 0.0, clampf(world.z, -CourtDimensions.HALF_LENGTH + 0.14, -0.20))
             marker.position = Vector3(target_position.x, 0.10, target_position.z)
+    _update_aim_preview()
     camera.position = Vector3(lerpf(camera.position.x, player.position.x * 0.35, 0.06), 9.2, 12.0)
     camera.look_at(Vector3(player.position.x * 0.16, 0.0, -0.15), Vector3.UP)
     if ball.moving and not resetting:
@@ -82,6 +111,33 @@ func _unhandled_input(event: InputEvent) -> void:
         elif event.button_index == MOUSE_BUTTON_RIGHT:
             _attempt_hit(true)
 
+## Shows what a click would do right now: the arc of each shot type that the solver accepts,
+## and a marker colour plus text for accepted / refused / out of reach.
+func _update_aim_preview() -> void:
+    if resetting or not _ball_in_reach():
+        drive_preview.show_points(PackedVector3Array())
+        dink_preview.show_points(PackedVector3Array())
+        marker_material.albedo_color = AIM_IDLE
+        aim_label.text = "AIM  —  ball not in reach"
+        return
+    var drive_ok: bool = _preview_shot(drive_preview, false)
+    var dink_ok: bool = _preview_shot(dink_preview, true)
+    marker_material.albedo_color = AIM_OK if (drive_ok or dink_ok) else AIM_BLOCKED
+    if drive_ok and dink_ok:
+        aim_label.text = "AIM OK  —  yellow dots: drive (left)   aqua dots: dink (right)"
+    elif drive_ok or dink_ok:
+        aim_label.text = "AIM OK  —  only the %s clears the net from here" % ("drive" if drive_ok else "dink")
+    else:
+        aim_label.text = "AIM BLOCKED  —  no shot clears the net from here"
+
+func _preview_shot(view: TrajectoryPreview, soft: bool) -> bool:
+    var shot: ShotSolver.Solution = ShotSolver.solve(ball.position, target_position, soft, tuning)
+    view.show_points(ShotSolver.sample_arc(ball.position, shot, tuning.gravity))
+    return shot.ok
+
+func _ball_in_reach() -> bool:
+    return ball.position.z > 0.0 and ball.position.distance_to(player.position + Vector3.UP * tuning.player_contact_height) <= tuning.player_reach
+
 func _attempt_hit(soft: bool) -> void:
     if not RulesEngine.is_cross_court_target(target_position, 1):
         _set_status("Aim at the opponent's side.")
@@ -96,6 +152,8 @@ func _attempt_hit(soft: bool) -> void:
     if not shot.ok:
         _set_status(_refusal_text(shot.reason))
         return
+    shot_target = target_position
+    landing_marker.visible = false
     player_hits += 1
     _update_score()
     _set_status("DINK" if soft else "DRIVE")
@@ -106,9 +164,14 @@ func _refusal_text(reason: ShotSolver.Reason) -> String:
         ShotSolver.Reason.TOO_FAST: return "Too far for that shot."
         _: return "Aim at the opponent's side."
 
-func _on_ball_bounced(side: int, count: int, _contact: Vector3) -> void:
+func _on_ball_bounced(side: int, count: int, contact: Vector3) -> void:
     if side == -1 and count == 1 and ball.last_hitter == 1:
         bot_should_return = true
+        landing_marker.position = Vector3(contact.x, 0.11, contact.z)
+        landing_marker.visible = true
+        var miss_cm: float = Vector2(contact.x - shot_target.x, contact.z - shot_target.z).length() * 100.0
+        # Own label: the status line is overwritten as soon as the opponent swings.
+        shot_label.text = "LAST SHOT  —  landed %d cm from your target (coral dot)" % roundi(miss_cm)
         _set_status("Opponent preparing a return …")
     elif side == 1 and count == 1:
         _set_status("Bounce on your side — return it!")
@@ -160,6 +223,11 @@ func _make_hud() -> void:
     status_label = Label.new()
     status_label.add_theme_font_size_override("font_size", 16)
     stack.add_child(status_label)
+    aim_label = Label.new()
+    stack.add_child(aim_label)
+    shot_label = Label.new()
+    shot_label.text = "LAST SHOT  —  none yet"
+    stack.add_child(shot_label)
     var help := Label.new()
     help.text = "WASD move | SHIFT sprint | Mouse aim | LEFT drive | RIGHT dink | R reset | ESC menu"
     stack.add_child(help)

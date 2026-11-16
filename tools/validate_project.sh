@@ -8,4 +8,5 @@ GODOT="${1:-godot}"
 "$GODOT" --headless --path . --script res://tests/unit/test_court_dimensions.gd
 "$GODOT" --headless --path . --script res://tests/unit/test_gameplay_tuning.gd
 "$GODOT" --headless --path . --script res://tests/unit/test_shot_solver.gd
+"$GODOT" --headless --path . --script res://tests/integration/test_training_preview.gd
 echo "Basic Godot checks passed; manual gameplay testing still required."

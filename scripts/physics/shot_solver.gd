@@ -57,5 +57,14 @@ static func clears_net(origin: Vector3, velocity: Vector3, flight_time: float, g
         previous = next
     return true
 
+## Evenly timed points along a solved shot, from contact to landing, for previews.
+static func sample_arc(origin: Vector3, shot: Solution, gravity: float, count: int = 16) -> PackedVector3Array:
+    var points := PackedVector3Array()
+    if not shot.ok or count < 2:
+        return points
+    for i in range(count):
+        points.append(position_at(origin, shot.velocity, gravity, shot.flight_time * float(i) / float(count - 1)))
+    return points
+
 static func position_at(origin: Vector3, velocity: Vector3, gravity: float, t: float) -> Vector3:
     return origin + velocity * t + Vector3.DOWN * (0.5 * gravity * t * t)
