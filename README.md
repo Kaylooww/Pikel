@@ -31,8 +31,9 @@
 | Gameplay tuning config | `config/gameplay_tuning.tres`; 15 unit checks. Camera values not yet included |
 | Trajectory preview and landing feedback | Dotted arcs for drive and dink from the solver, marker and text for OK / blocked / out of reach, landing dot and miss distance; logic tested headless, **not yet seen on screen** |
 | Camera | `CourtCamera` with two data-driven rigs (raised training view, lower match chase view), frame-rate independent smoothing, **C** switches; 18 unit checks. Match view values are untuned and unseen |
-| Real serves, legal scoring, two-bounce enforcement | **Not implemented** |
-| Singles match state machine | **Not implemented** |
+| Rally state machine | `RallyState` consumes `RallyEvent`s: phases from serve to open rally, faults for net, out, own side, double bounce, double hit and two-bounce violations; 30 unit checks. **Not connected to the playable scene yet** |
+| Real serves, service courts in play, kitchen faults, scoring | **Not implemented** |
+| Singles match flow (score, side-out, match end) | **Not implemented** |
 | Online multiplayer, dedicated server, matchmaking | **Not implemented** |
 | Doubles, cosmetics, model animations | **Not implemented** |
 | Full game-ready character models | **Not supplied**; your team creates them |
