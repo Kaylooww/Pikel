@@ -122,23 +122,30 @@ func _update_aim_preview() -> void:
         marker_material.albedo_color = AIM_IDLE
         aim_label.text = "AIM  —  ball not in reach"
         return
-    var drive_ok: bool = _preview_shot(drive_preview, false)
-    var dink_ok: bool = _preview_shot(dink_preview, true)
+    # The arcs use the real target, so a mistimed or stretched swing visibly drifts off the marker.
+    var contact: SwingContact.Contact = _contact()
+    var real_target: Vector3 = contact.apply(target_position)
+    var drive_ok: bool = _preview_shot(drive_preview, real_target, false)
+    var dink_ok: bool = _preview_shot(dink_preview, real_target, true)
     marker_material.albedo_color = AIM_OK if (drive_ok or dink_ok) else AIM_BLOCKED
     if drive_ok and dink_ok:
-        aim_label.text = "AIM OK  —  yellow dots: drive (left)   aqua dots: dink (right)"
+        aim_label.text = "AIM OK  —  contact: %s  —  yellow dots: drive   aqua dots: dink" % contact.label()
     elif drive_ok or dink_ok:
-        aim_label.text = "AIM OK  —  only the %s clears the net from here" % ("drive" if drive_ok else "dink")
+        aim_label.text = "AIM OK  —  contact: %s  —  only the %s clears the net from here" % [contact.label(), "drive" if drive_ok else "dink"]
     else:
-        aim_label.text = "AIM BLOCKED  —  no shot clears the net from here"
+        aim_label.text = "AIM BLOCKED  —  contact: %s  —  no shot lands in from here" % contact.label()
 
-func _preview_shot(view: TrajectoryPreview, soft: bool) -> bool:
-    var shot: ShotSolver.Solution = ShotSolver.solve(ball.position, target_position, soft, tuning)
+func _preview_shot(view: TrajectoryPreview, real_target: Vector3, soft: bool) -> bool:
+    var shot: ShotSolver.Solution = ShotSolver.solve(ball.position, real_target, soft, tuning)
     view.show_points(ShotSolver.sample_arc(ball.position, shot, tuning.gravity))
     return shot.ok
 
+## Reach and timing of a swing made right now.
+func _contact() -> SwingContact.Contact:
+    return SwingContact.evaluate(player.position, ball.position, ball.ball_velocity, 1, tuning)
+
 func _ball_in_reach() -> bool:
-    return ball.position.z > 0.0 and ball.position.distance_to(player.position + Vector3.UP * tuning.player_contact_height) <= tuning.player_reach
+    return ball.position.z > 0.0 and _contact().in_reach
 
 func _attempt_hit(soft: bool) -> void:
     if not RulesEngine.is_cross_court_target(target_position, 1):
@@ -147,24 +154,25 @@ func _attempt_hit(soft: bool) -> void:
     if ball.position.z <= 0.0:
         _set_status("Ball is still on the other half.")
         return
-    if ball.position.distance_to(player.position + Vector3.UP * tuning.player_contact_height) > tuning.player_reach:
+    var contact: SwingContact.Contact = _contact()
+    if not contact.in_reach:
         _set_status("Too far from ball — move closer.")
         return
-    var shot: ShotSolver.Solution = ball.launch(target_position, soft, 1)
+    var shot: ShotSolver.Solution = ball.launch(contact.apply(target_position), soft, 1)
     if not shot.ok:
-        _set_status(_refusal_text(shot.reason))
+        _set_status("%s (contact: %s)" % [_refusal_text(shot.reason), contact.label()])
         return
     shot_target = target_position
     landing_marker.visible = false
     player_hits += 1
     _update_score()
-    _set_status("DINK" if soft else "DRIVE")
+    _set_status("%s  —  %s" % ["DINK" if soft else "DRIVE", contact.label()])
 
 func _refusal_text(reason: ShotSolver.Reason) -> String:
     match reason:
         ShotSolver.Reason.NET: return "Can't clear the net from here — get under the ball or aim shorter."
         ShotSolver.Reason.TOO_FAST: return "Too far for that shot."
-        _: return "Aim at the opponent's side."
+        _: return "That swing would send the ball out."
 
 func _on_ball_bounced(side: int, count: int, contact: Vector3) -> void:
     if side == -1 and count == 1 and ball.last_hitter == 1:

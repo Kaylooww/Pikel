@@ -55,6 +55,24 @@ func _run() -> void:
     _assert(Vector2(game.landing_marker.position.x - aimed.x, game.landing_marker.position.z - aimed.z).length() < 0.02, "ball landed on the previewed point")
     _assert(game.shot_label.text.contains("cm from your target"), "HUD reports the miss distance")
 
+    # A late, stretched swing: the preview and the real shot both drift off the aim point (RP-015).
+    game.landing_marker.visible = false
+    game.ball.reset_ball(game.player.position + Vector3(1.2, 0.95, 0.8))
+    game.ball.ball_velocity = Vector3(0.0, 0.0, 8.0) # flying past the player
+    game.target_position = Vector3(0.0, 0.0, -4.5)
+    game._update_aim_preview()
+    _assert(game.aim_label.text.contains("LATE"), "aim label shows late contact")
+    var drift_end: Vector3 = game.drive_preview.shown_points[-1]
+    _assert(drift_end.x > 0.3, "previewed arc drifts to the right of the marker")
+    game._attempt_hit(false)
+    _assert(game.status_label.text.contains("LATE"), "status names the contact quality")
+    for i in range(240):
+        if game.landing_marker.visible:
+            break
+        await physics_frame
+    _assert(Vector2(game.landing_marker.position.x - drift_end.x, game.landing_marker.position.z - drift_end.z).length() < 0.02, "mishit lands where the preview showed")
+    _assert(not game.shot_label.text.contains(" 0 cm"), "miss distance is no longer zero")
+
     game.queue_free()
     if errors.is_empty():
         print("PASS: %d training preview checks" % checks)

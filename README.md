@@ -22,6 +22,7 @@
 | Local player WASD and Shift | Starter implementation, read through a rebindable input action map (26 unit checks). No settings screen; rebinds are not saved |
 | Cursor projected onto opposite half | Starter implementation |
 | Left-click drive, right-click soft hit | Starter implementation |
+| Swing quality | Reach and timing judged per swing (clean / early / late / stretched); mishits drift by a predictable amount that the preview shows; 22 unit checks. Right-handed forehand only, **feel untested** |
 | Ball flight, gravity, bounce | No drag or spin; exact parabola and exact landing point; needs tuning |
 | Shot solver | Raises the arc to clear the net and refuses impossible shots; 16 unit checks |
 | Net contact | Swept sphere-vs-net test with 11 unit checks; a hit still just ends the rally (no net bounce) |

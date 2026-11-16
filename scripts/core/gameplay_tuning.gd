@@ -25,6 +25,12 @@ class_name GameplayTuning
 @export_group("Contact")
 @export var player_reach: float = 2.05 ## max distance from the player's contact point to the ball
 @export var player_contact_height: float = 0.95
+@export var clean_reach: float = 1.2 ## within this distance the swing is comfortable; beyond it, stretched
+@export var max_reach_error: float = 1.0 ## metres a fully stretched shot falls short
+@export var contact_lead: float = 0.4 ## how far in front of the body the ideal contact is
+@export var clean_timing_window: float = 0.08 ## seconds either side of ideal contact that count as clean
+@export var max_timing_window: float = 0.30 ## seconds off at which the timing error stops growing
+@export var max_timing_error: float = 1.2 ## metres a badly timed shot drifts sideways
 @export var bot_reach: float = 2.25
 @export var bot_contact_height: float = 1.0
 
