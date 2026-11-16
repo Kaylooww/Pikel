@@ -19,7 +19,9 @@ func _initialize() -> void:
     _assert(ended.size() == 1 and ended[0] == first and first.fault == RallyState.Fault.DOUBLE_BOUNCE, "rally end is reported with the fault")
     _assert(not c.bounce(Vector3(0, 0, -6)) and not c.net(Vector3.ZERO) and ended.size() == 1, "later events do not report a second end")
 
+    c.momentum_ticks = 50
     c.start(-1, true)
+    _assert(c.rally.momentum_ticks == 50 and not c.kitchen_entry(1, Vector3(0, 0, 1)), "new rallies get the momentum window, and idle kitchen entries are ignored")
     _assert(first.log[0].player_position == Vector3(1.5, 0, 7), "hit events carry the hitter's feet position")
     _assert(c.rally != first and c.rally.rally_id == 2 and c.rally.server_side == -1, "next rally gets a new id and server")
     _assert(not c.hit(1, Vector3.ZERO, Vector3(1.5, 0, 7)), "wrong server cannot start it")

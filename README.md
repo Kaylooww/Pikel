@@ -34,7 +34,8 @@
 | Rally state machine | `RallyState` consumes `RallyEvent`s: phases from serve to open rally, faults for net, out, own side, double bounce, double hit and two-bounce violations; 31 unit checks |
 | Live rally adjudication | The practice rally is judged by `RallyState` through `RallyController`: your first hit is the serve, the return must bounce, and the HUD says who won the rally and why; 12 unit and 15 integration checks. **Not yet played by a human** |
 | Serve rules | Server must stand behind the baseline in the correct half; serve must land in the diagonal service court; the preview warns before a faulty serve. Treated as a drop serve: no swing-motion checks. Always the right court until scoring exists |
-| Kitchen faults, scoring | **Not implemented** |
+| Kitchen rules | Volleying while standing in the kitchen (line included) is a fault, and so is stepping in within 0.6 s after a volley; standing there and hitting bounced balls is allowed; the preview warns. Players are a single ground point, not two feet |
+| Scoring | **Not implemented** |
 | Singles match flow (score, side-out, match end) | **Not implemented** |
 | Online multiplayer, dedicated server, matchmaking | **Not implemented** |
 | Doubles, cosmetics, model animations | **Not implemented** |

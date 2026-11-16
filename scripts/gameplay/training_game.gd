@@ -21,6 +21,7 @@ var shot_label: Label
 var shot_target: Vector3 = Vector3.ZERO ## where the player's last shot was aimed
 var awaiting_landing: bool = false ## the player's shot is in the air and has not landed yet
 var referee := RallyController.new()
+var in_kitchen: Dictionary = {} ## player node -> was standing in the kitchen last tick
 var status_label: Label
 var score_label: Label
 var player_hits: int = 0
@@ -44,6 +45,7 @@ func _ready() -> void:
     ball.bounced.connect(_on_ball_bounced)
     ball.net_hit.connect(_on_ball_net_hit)
     referee.rally_ended.connect(_on_rally_ended)
+    referee.momentum_ticks = roundi(tuning.momentum_window * Engine.physics_ticks_per_second)
     _reset_ball()
     marker = MeshInstance3D.new()
     var marker_mesh := CylinderMesh.new()
@@ -79,6 +81,14 @@ func _ready() -> void:
     _make_environment()
     _make_hud()
     _set_status("Aim on the OPPOSITE court; click while the ball is within reach.")
+
+## Tells the rules whenever a player steps into the kitchen.
+func _physics_process(_delta: float) -> void:
+    for who: PickleballPlayer in [player, bot]:
+        var inside: bool = CourtDimensions.inside_kitchen(who.position)
+        if inside and not in_kitchen.get(who, false):
+            referee.kitchen_entry(1 if who == player else -1, who.position)
+        in_kitchen[who] = inside
 
 func _process(_delta: float) -> void:
     var origin: Vector3 = camera.project_ray_origin(get_viewport().get_mouse_position())
@@ -127,11 +137,11 @@ func _update_aim_preview() -> void:
         marker_material.albedo_color = AIM_IDLE
         aim_label.text = "AIM  —  ball not in reach"
         return
-    if _must_bounce_first():
+    if _must_bounce_first() or _kitchen_volley():
         drive_preview.show_points(PackedVector3Array())
         dink_preview.show_points(PackedVector3Array())
         marker_material.albedo_color = AIM_BLOCKED
-        aim_label.text = "WAIT  —  let the return bounce first (two-bounce rule)"
+        aim_label.text = "WAIT  —  let the return bounce first (two-bounce rule)" if _must_bounce_first() else "KITCHEN  —  no volleys here: let it bounce or step back"
         return
     # The arcs use the real target, so a mistimed or stretched swing visibly drifts off the marker.
     var contact: SwingContact.Contact = _contact()
@@ -172,6 +182,11 @@ func _serve_problem(real_target: Vector3) -> String:
 ## True while the opponent's return is in the air and the rules require it to bounce.
 func _must_bounce_first() -> bool:
     return referee.rally.phase == RallyState.Phase.RETURN_IN_FLIGHT and referee.rally.last_hitter == -1
+
+## True when hitting now would be a volley made from inside the kitchen.
+func _kitchen_volley() -> bool:
+    var rally: RallyState = referee.rally
+    return rally.phase == RallyState.Phase.OPEN_RALLY and rally.last_hitter == -1 and rally.bounces_since_hit == 0 and CourtDimensions.inside_kitchen(player.position)
 
 func _ball_in_reach() -> bool:
     return ball.position.z > 0.0 and _contact().in_reach
@@ -248,6 +263,8 @@ func _fault_text(rally: RallyState) -> String:
         RallyState.Fault.OWN_SIDE: what = "DID NOT CROSS THE NET"
         RallyState.Fault.DOUBLE_BOUNCE: what = "DOUBLE BOUNCE"
         RallyState.Fault.VOLLEY_BEFORE_BOUNCE: what = "TWO-BOUNCE RULE — the ball had to bounce first"
+        RallyState.Fault.KITCHEN_VOLLEY: what = "KITCHEN FAULT — no volleys while standing in the kitchen"
+        RallyState.Fault.KITCHEN_MOMENTUM: what = "KITCHEN FAULT — momentum carried into the kitchen after a volley"
         RallyState.Fault.SERVE_POSITION: what = "FOOT FAULT — serve from behind the baseline, right half"
         RallyState.Fault.SERVE_COURT: what = "SERVICE FAULT — serve must land in the diagonal service court"
         _: what = "DOUBLE HIT"

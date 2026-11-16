@@ -117,6 +117,15 @@
 - [ ] Serve rules were written from the project's rules doc and general knowledge of the rulebook, not checked line by line against the 2026 USA Pickleball text.
 - [ ] No human has served a ball in the game.
 
+## RP-023 results recorded 2026-11-17 (same machine and Godot build)
+
+- [x] Headless import — exit 0, no errors or warnings printed.
+- [x] Unit tests: rules 7, net collision 11, court dimensions 39, gameplay tuning 15, shot solver 24, camera 18, input 26, swing contact 22, rally state 52, rally controller 14 — all pass.
+- [x] `tests/integration/test_training_preview.gd` — `PASS: 20 training preview checks`.
+- [x] `tests/integration/test_training_rally.gd` — `PASS: 30 training rally checks`, run three times in a row to check it is not timing-flaky.
+- [x] Training scene, 120 headless frames — exit 0, no script errors.
+- [ ] No human has volleyed at the kitchen line in the game; the 0.6 s momentum window is a guess.
+
 Still not performed: F5 gameplay with a human, Windows export, MCP editor connection.
 
 Do not describe this project as a fully validated production game.

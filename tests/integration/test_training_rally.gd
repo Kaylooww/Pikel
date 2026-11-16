@@ -104,6 +104,43 @@ func _run() -> void:
     game._update_aim_preview()
     _assert(game.aim_label.text.begins_with("AIM OK") and game.marker_material.albedo_color == game.AIM_OK, "a legal serve previews as OK")
 
+    # Rally 7: volley from inside the kitchen (RP-023).
+    await _until(func() -> bool: return not game.resetting)
+    var seventh: RallyState = await _play_to_fourth_shot()
+    _assert(seventh.phase == P.OPEN_RALLY and seventh.last_hitter == -1 and seventh.bounces_since_hit == 0, "rally reaches a ball the player could volley")
+    await _until(func() -> bool: return game.ball.position.z > 1.0 or seventh.is_over())
+    game.player.position = Vector3(game.ball.position.x, 0.0, 1.5)
+    game._update_aim_preview()
+    _assert(game.aim_label.text.begins_with("KITCHEN"), "preview warns against volleying in the kitchen")
+    game._attempt_hit(false)
+    _assert(seventh.is_over() and seventh.fault == F.KITCHEN_VOLLEY and seventh.fault_side == 1, "volleying in the kitchen is a fault on the player")
+    _assert(game.status_label.text.contains("KITCHEN FAULT"), "status names the kitchen fault")
+
+    # Rally 8: legal volley from behind the line, then momentum carries the player in.
+    await _until(func() -> bool: return game.referee.rally != seventh)
+    var eighth: RallyState = await _play_to_fourth_shot()
+    await _until(func() -> bool: return game.ball.position.z > 2.2 or eighth.is_over())
+    game.player.position = Vector3(game.ball.position.x - 0.3, 0.0, game.ball.position.z + 0.4)
+    await physics_frame
+    game.target_position = Vector3(0.0, 0.0, -4.5)
+    game._attempt_hit(false)
+    _assert(not eighth.is_over() and eighth.last_hitter == 1, "volley from behind the kitchen line is legal")
+    game.player.position = Vector3(game.player.position.x, 0.0, 1.5)
+    await physics_frame
+    await physics_frame
+    _assert(eighth.is_over() and eighth.fault == F.KITCHEN_MOMENTUM and eighth.fault_side == 1, "stepping into the kitchen right after the volley is a fault")
+
+    # Rally 9: walking into the kitchen without volleying is never a fault.
+    await _until(func() -> bool: return game.referee.rally != eighth)
+    game._reset_ball()
+    var ninth: RallyState = game.referee.rally
+    game.target_position = Vector3(-1.5, 0.0, -4.5)
+    game._attempt_hit(false)
+    game.player.position = Vector3(0.0, 0.0, 1.0)
+    await physics_frame
+    await physics_frame
+    _assert(not ninth.is_over(), "standing in the kitchen during a rally is allowed")
+
     game.queue_free()
     if errors.is_empty():
         print("PASS: %d training rally checks" % checks)
@@ -111,6 +148,23 @@ func _run() -> void:
     else:
         for error in errors: printerr("FAIL: ", error)
         quit(1)
+
+## Fresh rally played to the opponent's second hit: serve, return, the player's clean
+## groundstroke, the opponent's reply. Returns with that reply in the air.
+func _play_to_fourth_shot() -> RallyState:
+    game._reset_ball()
+    var rally: RallyState = game.referee.rally
+    await process_frame
+    game.target_position = Vector3(-1.5, 0.0, -4.5)
+    game._attempt_hit(false)
+    await _until(func() -> bool: return rally.phase == P.OPEN_RALLY or rally.is_over())
+    # Stand so the bounced return is exactly at the ideal contact point, then hit it back.
+    game.player.position = Vector3(game.ball.position.x - 0.3, 0.0, game.ball.position.z + 0.4)
+    await physics_frame
+    game.target_position = Vector3(game.bot.position.x, 0.0, -4.5)
+    game._attempt_hit(false)
+    await _until(func() -> bool: return (rally.log.size() >= 7 and rally.last_hitter == -1) or rally.is_over())
+    return rally
 
 ## Waits up to 10 seconds of physics frames for `done` to become true.
 func _until(done: Callable) -> void:

@@ -67,6 +67,8 @@ stateDiagram-v2
 | `DOUBLE_HIT` | same side hits twice in a row | that side |
 | `SERVE_POSITION` | server not behind the baseline, or outside the half they serve from | server |
 | `SERVE_COURT` | serve lands in the kitchen (line included) or the wrong service court | server |
+| `KITCHEN_VOLLEY` | volley hit while the hitter stands in the kitchen, line included | the volleyer |
+| `KITCHEN_MOMENTUM` | volleyer steps into the kitchen within the momentum window after a volley | the volleyer |
 
 `apply(event)` returns false and changes nothing for a duplicate or older event id, an event from another rally, anything after the rally has ended, and anything but the server's hit before the serve. So one contact can never end a rally twice.
 
@@ -82,7 +84,14 @@ A ball that has already bounced in once is a double bounce wherever it lands nex
 
 In the training scene each new ball puts the player on a legal serve spot in the right court. The aim line reads "SERVE FAULT IF HIT" with the reason when the position or target is illegal; the serve can still be hit and is then called.
 
-Limits: always the right court, because choosing the side needs the score (RP-024); a serve that clips the net is a fault because the net stops the ball, although the real rule plays it; no kitchen or momentum faults (RP-023); the rally winner is shown but no points are awarded (RP-024).
+### Kitchen and momentum (RP-023)
+A volley is a hit made in the open rally before the ball has bounced. `RallyState` checks the hitter's feet (`RallyEvent.player_position`) against `CourtDimensions.inside_kitchen`: in the kitchen or on its line is `KITCHEN_VOLLEY`. Otherwise it remembers the tick of that side's volley. A `KITCHEN_ENTRY` event from the same side within `momentum_ticks` (from `GameplayTuning.momentum_window`, 0.6 s) is `KITCHEN_MOMENTUM`. Any other kitchen entry is ignored and not logged, so walking into the kitchen, standing there, and hitting a ball that has bounced are all allowed. The area beside the court level with the kitchen is not the kitchen.
+
+In the training scene `training_game.gd` reports each step into the kitchen, and the aim line reads "KITCHEN" when a hit would be a volley from inside it.
+
+**Simplifications to revisit:** the real rule has no fixed time; momentum lasts until the player regains balance, and it still applies after the ball is dead. Here it is a fixed window and only while the rally is live. A player is one ground point, so "one foot on the line" and items the player drops or a partner are not modelled. The practice opponent never volleys.
+
+Limits: always the right court, because choosing the side needs the score (RP-024); a serve that clips the net is a fault because the net stops the ball, although the real rule plays it; the rally winner is shown but no points are awarded (RP-024).
 
 ## Scoring engine
 - Implement **traditional side-out scoring** as the competitive default; only serving side scores points.
@@ -107,4 +116,4 @@ The kitchen is not forbidden ground. Standing there is allowed; hitting an airbo
 | Team scores while receiving under traditional rules | Side-out rather than point |
 
 ## Known starter status
-`RulesEngine` has helper geometry and diagonal-target predicates. Rally phases and basic faults are in `RallyState` (above). Serve legality, kitchen/momentum logic and scoring are **not implemented**. The practice HUD explicitly avoids claiming official scoring.
+`RulesEngine` has helper geometry and diagonal-target predicates. Rally phases and basic faults are in `RallyState` (above). Serve position, service courts and kitchen/momentum faults are in `RallyState` too. Scoring is **not implemented**. The practice HUD explicitly avoids claiming official scoring.
