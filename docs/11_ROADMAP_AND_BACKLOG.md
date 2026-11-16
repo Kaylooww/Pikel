@@ -13,50 +13,52 @@
 | P5 | 16–20 | Doubles, character integration, UX/animation | Four players finish a full match |
 | P6 | 20–24 | Regression, accessibility, optimization, beta | External testers can run packaged PC build |
 
+Progress is tracked here: `[x]` done, `[ ]` open. `prompts/NEXT.md` picks the first open task.
+
 ## Sprint 0: audit and stabilize starter
-- **RP-001 (P0):** Open Godot 4.7.2 project and fix any import/parser errors. **Acceptance:** no headless import errors.
-- **RP-002 (P0):** Run existing smoke tests; remove any faulty assertions. **Acceptance:** green tests with documented output.
-- **RP-003 (P0):** Manually test menu → practice → mouse aim/drive/dink/reset. **Acceptance:** reproduction report.
-- **RP-004 (P0):** Freeze units and court dimensions. **Acceptance:** exact court predicates documented and tested.
-- **RP-005 (P0):** Establish reusable gameplay tuning config. **Acceptance:** changes don't require replacing physics logic.
+- [x] **RP-001 (P0):** Open Godot 4.7.2 project and fix any import/parser errors. **Acceptance:** no headless import errors.
+- [x] **RP-002 (P0):** Run existing smoke tests; remove any faulty assertions. **Acceptance:** green tests with documented output.
+- [ ] **RP-003 (P0):** Manually test menu → practice → mouse aim/drive/dink/reset. **Acceptance:** reproduction report.
+- [ ] **RP-004 (P0):** Freeze units and court dimensions. **Acceptance:** exact court predicates documented and tested.
+- [ ] **RP-005 (P0):** Establish reusable gameplay tuning config. **Acceptance:** changes don't require replacing physics logic.
 
 ## Sprint 1: ball and input quality
-- **RP-010 (P0):** Swept net collision (avoid tunneling), including net top and posts.
-- **RP-011 (P0):** Basic valid shot solver with target, contact height and net clearance.
-- **RP-012 (P0):** Honest trajectory/landing preview and miss feedback.
-- **RP-013 (P0):** Separate in-game and training camera controllers.
-- **RP-014 (P1):** Input action map + rebinding-ready API.
-- **RP-015 (P1):** Player paddle contact windows and swing quality.
+- [x] **RP-010 (P0):** Swept net collision (avoid tunneling), including net top and posts.
+- [ ] **RP-011 (P0):** Basic valid shot solver with target, contact height and net clearance.
+- [ ] **RP-012 (P0):** Honest trajectory/landing preview and miss feedback.
+- [ ] **RP-013 (P0):** Separate in-game and training camera controllers.
+- [ ] **RP-014 (P1):** Input action map + rebinding-ready API.
+- [ ] **RP-015 (P1):** Player paddle contact windows and swing quality.
 
 ## Sprint 2: legal gameplay
-- **RP-020 (P0):** Rally event IDs and distinct state transitions.
-- **RP-021 (P0):** Two-bounce rule (serve/return/open rally).
-- **RP-022 (P0):** Legal serves and proper diagonal service landing.
-- **RP-023 (P0):** NVZ/volley/momentum logic.
-- **RP-024 (P0):** Side-out score/rotation and match end condition.
-- **RP-025 (P1):** Full local singles with bot or second controller.
+- [ ] **RP-020 (P0):** Rally event IDs and distinct state transitions.
+- [ ] **RP-021 (P0):** Two-bounce rule (serve/return/open rally).
+- [ ] **RP-022 (P0):** Legal serves and proper diagonal service landing.
+- [ ] **RP-023 (P0):** NVZ/volley/momentum logic.
+- [ ] **RP-024 (P0):** Side-out score/rotation and match end condition.
+- [ ] **RP-025 (P1):** Full local singles with bot or second controller.
 
 ## Sprint 3: networking foundation
-- **RP-030 (P0):** Dedicated headless match server with fixed tick and match IDs.
-- **RP-031 (P0):** LAN join, ownership, validated inputs and snapshots.
-- **RP-032 (P0):** Client prediction, opponent interpolation and reconciliation.
-- **RP-033 (P0):** Accurate authoritative hit and fault events.
-- **RP-034 (P1):** Timeout, reconnect and error states.
-- **RP-035 (P1):** Private match codes and public server deployment.
+- [ ] **RP-030 (P0):** Dedicated headless match server with fixed tick and match IDs.
+- [ ] **RP-031 (P0):** LAN join, ownership, validated inputs and snapshots.
+- [ ] **RP-032 (P0):** Client prediction, opponent interpolation and reconciliation.
+- [ ] **RP-033 (P0):** Accurate authoritative hit and fault events.
+- [ ] **RP-034 (P1):** Timeout, reconnect and error states.
+- [ ] **RP-035 (P1):** Private match codes and public server deployment.
 
 ## Sprint 4: doubles and art
-- **RP-040 (P0):** Four-player server match state with teams and rotation.
-- **RP-041 (P0):** Character GLB wrapper / rig handoff contract.
-- **RP-042 (P0):** Animations, shot tells, SFX and effects.
-- **RP-043 (P1):** Game HUD, settings, tutorial, pause and match-end screens.
-- **RP-044 (P1):** Cosmetics selection (non-ranked).
+- [ ] **RP-040 (P0):** Four-player server match state with teams and rotation.
+- [ ] **RP-041 (P0):** Character GLB wrapper / rig handoff contract.
+- [ ] **RP-042 (P0):** Animations, shot tells, SFX and effects.
+- [ ] **RP-043 (P1):** Game HUD, settings, tutorial, pause and match-end screens.
+- [ ] **RP-044 (P1):** Cosmetics selection (non-ranked).
 
 ## Sprint 5: quality and public beta
-- **RP-050 (P0):** Replayable automated rules/physics scenarios.
-- **RP-051 (P0):** Multiclient latency, jitter, loss, stress tests.
-- **RP-052 (P0):** Windows export, crash fixes, playtest telemetry if consented.
-- **RP-053 (P1):** Accessibility/input settings and feedback improvements.
-- **RP-054 (P1):** Store page, asset rights and player support checklist.
+- [ ] **RP-050 (P0):** Replayable automated rules/physics scenarios.
+- [ ] **RP-051 (P0):** Multiclient latency, jitter, loss, stress tests.
+- [ ] **RP-052 (P0):** Windows export, crash fixes, playtest telemetry if consented.
+- [ ] **RP-053 (P1):** Accessibility/input settings and feedback improvements.
+- [ ] **RP-054 (P1):** Store page, asset rights and player support checklist.
 
 ## Defer until after reliable private matches
 Ranked queues, battle passes, microtransactions, complex cosmetics progression, spectator mode, public chat, social gym, full replays, tournaments, elaborate bot skills. These create cost and security obligations that can derail core gameplay.

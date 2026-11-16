@@ -25,7 +25,7 @@ Claude Code can work in the repository like a developer: read code, edit source,
 7. Review/merge only after a human validates any design-impacting behavior.
 
 ## Suggested Git naming
-`feature/RP-010-swept-net-collision`, `feature/RP-022-serve-state`, `fix/RP-032-snapshot-jitter`, `docs/rig-handoff-v2`. Commit messages should describe observable work, not "finished game".
+Branch and commit naming is defined in `docs/19_GITHUB_RULES.md`, for example `feat/swept-net-collision`, `fix/snapshot-jitter`, `docs/rig-handoff-v2`. Commit messages should describe observable work, not "finished game".
 
 ## Model limitations and guardrails
 - Refuse the urge to generate entire multiplayer code in a single prompt.
