@@ -6,6 +6,8 @@ extends Node3D
 @onready var bot: PickleballPlayer = $PracticeOpponent
 @onready var ball: PickleballBall = $Ball
 @onready var camera: CourtCamera = $Camera3D
+## Where the practice server stands: right court, a step behind the baseline.
+const SERVE_SPOT := Vector3(1.5, 0.0, CourtDimensions.HALF_LENGTH + 0.3)
 const AIM_OK := Color(0.33, 0.84, 0.80, 0.70)
 const AIM_BLOCKED := Color(1.0, 0.51, 0.42, 0.70)
 const AIM_IDLE := Color(0.75, 0.78, 0.80, 0.40)
@@ -28,8 +30,7 @@ var resetting: bool = false
 var target_position: Vector3 = Vector3(0, 0, -4.5)
 
 func _ready() -> void:
-    player.position = Vector3(0.0, 0.0, 5.0)
-    bot.position = Vector3(0.0, 0.0, -5.2)
+    bot.position = Vector3(-1.5, 0.0, -5.2)
     bot.home_side = false
     bot.controlled_by_ai = true
     var bot_material := StandardMaterial3D.new()
@@ -95,7 +96,7 @@ func _process(_delta: float) -> void:
         if bot_should_return and ball.position.z < -0.2 and ball.position.distance_to(bot.position + Vector3.UP * tuning.bot_contact_height) < tuning.bot_reach:
             bot_should_return = false
             if ball.launch(Vector3(clampf(player.position.x, -2.4, 2.4), 0.0, 4.55), false).ok:
-                referee.hit(-1, ball.position)
+                referee.hit(-1, ball.position, bot.position)
                 bot_hits += 1
                 _update_score()
                 _set_status("Opponent returned the ball. Wait for a bounce, then hit it!")
@@ -137,8 +138,11 @@ func _update_aim_preview() -> void:
     var real_target: Vector3 = contact.apply(target_position)
     var drive_ok: bool = _preview_shot(drive_preview, real_target, false)
     var dink_ok: bool = _preview_shot(dink_preview, real_target, true)
-    marker_material.albedo_color = AIM_OK if (drive_ok or dink_ok) else AIM_BLOCKED
-    if drive_ok and dink_ok:
+    var serve_problem: String = _serve_problem(real_target)
+    marker_material.albedo_color = AIM_OK if (drive_ok or dink_ok) and serve_problem == "" else AIM_BLOCKED
+    if (drive_ok or dink_ok) and serve_problem != "":
+        aim_label.text = "SERVE FAULT IF HIT  —  %s" % serve_problem
+    elif drive_ok and dink_ok:
         aim_label.text = "AIM OK  —  contact: %s  —  yellow dots: drive   aqua dots: dink" % contact.label()
     elif drive_ok or dink_ok:
         aim_label.text = "AIM OK  —  contact: %s  —  only the %s clears the net from here" % [contact.label(), "drive" if drive_ok else "dink"]
@@ -153,6 +157,17 @@ func _preview_shot(view: TrajectoryPreview, real_target: Vector3, soft: bool) ->
 ## Reach and timing of a swing made right now.
 func _contact() -> SwingContact.Contact:
     return SwingContact.evaluate(player.position, ball.position, ball.ball_velocity, 1, tuning)
+
+## Why a serve hit right now would be a fault, or "" if it is legal or this is not a serve.
+func _serve_problem(real_target: Vector3) -> String:
+    var rally: RallyState = referee.rally
+    if rally.phase != RallyState.Phase.WAITING_FOR_SERVE:
+        return ""
+    if not CourtDimensions.legal_serve_position(player.position, true, rally.serve_from_right):
+        return "stand behind the baseline, on the right half"
+    if not CourtDimensions.legal_serve_target(real_target, true, rally.serve_from_right):
+        return "aim at the diagonal service court, past the kitchen line"
+    return ""
 
 ## True while the opponent's return is in the air and the rules require it to bounce.
 func _must_bounce_first() -> bool:
@@ -184,7 +199,7 @@ func _attempt_hit(soft: bool) -> void:
     player_hits += 1
     _update_score()
     _set_status("%s  —  %s" % ["DINK" if soft else "DRIVE", contact.label()])
-    referee.hit(1, ball.position) # may end the rally at once, e.g. volleying the return
+    referee.hit(1, ball.position, player.position) # may end the rally at once, e.g. a foot fault or volleying the return
 
 func _refusal_text(reason: ShotSolver.Reason) -> String:
     match reason:
@@ -233,15 +248,17 @@ func _fault_text(rally: RallyState) -> String:
         RallyState.Fault.OWN_SIDE: what = "DID NOT CROSS THE NET"
         RallyState.Fault.DOUBLE_BOUNCE: what = "DOUBLE BOUNCE"
         RallyState.Fault.VOLLEY_BEFORE_BOUNCE: what = "TWO-BOUNCE RULE — the ball had to bounce first"
+        RallyState.Fault.SERVE_POSITION: what = "FOOT FAULT — serve from behind the baseline, right half"
+        RallyState.Fault.SERVE_COURT: what = "SERVICE FAULT — serve must land in the diagonal service court"
         _: what = "DOUBLE HIT"
     return "%s  —  %s" % [what, "you win the rally" if rally.winner_side == 1 else "opponent wins the rally"]
 
-## New practice ball in the player's hand. The player's first hit is the serve.
+## New practice ball: the player is put on the serve spot with the ball in hand.
+## Their first hit is the serve. shortcut: always the right court until scoring picks the side (RP-024).
 func _reset_ball() -> void:
-    var spawn: Vector3 = player.position + Vector3(0.35, 1.00, -0.85)
-    spawn.z = maxf(spawn.z, tuning.min_net_distance) # never spawn on the opponent's half
-    ball.reset_ball(spawn)
-    referee.start(1)
+    player.position = SERVE_SPOT
+    ball.reset_ball(player.position + Vector3(0.35, 1.00, -0.85))
+    referee.start(1, true)
     awaiting_landing = false
     bot_should_return = false
     resetting = false

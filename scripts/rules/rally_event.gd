@@ -11,10 +11,13 @@ var rally_id: int = 0
 var tick: int = 0 ## simulation tick the event happened on
 var type: Type = Type.HIT
 var side: int = 0 ## HIT only: +1 home or -1 away player made contact
-var position: Vector3 = Vector3.ZERO ## where it happened; BOUNCE uses it for in/out and side
+var position: Vector3 = Vector3.ZERO ## where the ball was; BOUNCE uses it for in/out and side
+var player_position: Vector3 = Vector3.ZERO ## HIT only: the hitter's feet, for serve and kitchen rules
 
-static func hit(event_id: int, in_rally: int, at_tick: int, hitter_side: int, at: Vector3 = Vector3.ZERO) -> RallyEvent:
-    return _make(event_id, in_rally, at_tick, Type.HIT, hitter_side, at)
+static func hit(event_id: int, in_rally: int, at_tick: int, hitter_side: int, ball_at: Vector3 = Vector3.ZERO, feet_at: Vector3 = Vector3.ZERO) -> RallyEvent:
+    var event: RallyEvent = _make(event_id, in_rally, at_tick, Type.HIT, hitter_side, ball_at)
+    event.player_position = feet_at
+    return event
 
 static func bounce(event_id: int, in_rally: int, at_tick: int, at: Vector3) -> RallyEvent:
     return _make(event_id, in_rally, at_tick, Type.BOUNCE, 0, at)

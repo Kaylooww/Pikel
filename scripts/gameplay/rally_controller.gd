@@ -9,12 +9,13 @@ var rally: RallyState
 var _next_event_id: int = 0
 var _next_rally_id: int = 0
 
-func start(server_side: int) -> void:
+func start(server_side: int, serve_from_right: bool = true) -> void:
     _next_rally_id += 1
-    rally = RallyState.new(_next_rally_id, server_side)
+    rally = RallyState.new(_next_rally_id, server_side, serve_from_right)
 
-func hit(side: int, at: Vector3) -> bool:
-    return _apply(RallyEvent.hit(_take_id(), rally.rally_id, Engine.get_physics_frames(), side, at))
+## `ball_at` is the ball at contact, `feet_at` the hitter's ground position.
+func hit(side: int, ball_at: Vector3, feet_at: Vector3) -> bool:
+    return _apply(RallyEvent.hit(_take_id(), rally.rally_id, Engine.get_physics_frames(), side, ball_at, feet_at))
 
 func bounce(at: Vector3) -> bool:
     return _apply(RallyEvent.bounce(_take_id(), rally.rally_id, Engine.get_physics_frames(), at))

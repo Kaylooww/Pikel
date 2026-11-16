@@ -66,10 +66,43 @@ func _run() -> void:
     var third: RallyState = game.referee.rally
     game.ball.launch(Vector3(-2.9, 0.0, -6.6), false)
     game.ball.ball_velocity.z *= 1.15 # overhit: lands beyond the baseline
-    game.referee.hit(1, game.ball.position)
+    game.referee.hit(1, game.ball.position, game.player.position)
     await _until(func() -> bool: return third.is_over())
     _assert(third.fault == F.OUT and third.fault_side == 1, "a long serve is out on the server")
     _assert(third.log.size() == 2 and third.log[0].id < third.log[1].id, "the rally log holds the hit and the bounce in order")
+
+    # Rally 4: serving from inside the court is a foot fault, and the preview warns first (RP-022).
+    await _until(func() -> bool: return game.referee.rally != third)
+    game._reset_ball()
+    var fourth: RallyState = game.referee.rally
+    _assert(game.player.position == game.SERVE_SPOT and CourtDimensions.legal_serve_position(game.player.position, true, true), "a new ball puts the player on a legal serve spot")
+    game.player.position = Vector3(1.5, 0.0, 5.0)
+    game.ball.reset_ball(game.player.position + Vector3(0.35, 1.0, -0.85))
+    game.target_position = Vector3(-1.5, 0.0, -4.5)
+    game._update_aim_preview()
+    _assert(game.aim_label.text.begins_with("SERVE FAULT IF HIT") and game.aim_label.text.contains("baseline"), "preview warns about the serve position")
+    game._attempt_hit(false)
+    _assert(fourth.is_over() and fourth.fault == F.SERVE_POSITION and game.status_label.text.contains("FOOT FAULT"), "serving from inside the court is a foot fault")
+
+    # Rally 5: a serve straight ahead lands in the wrong service court.
+    await _until(func() -> bool: return game.referee.rally != fourth)
+    game._reset_ball()
+    var fifth: RallyState = game.referee.rally
+    game.target_position = Vector3(1.5, 0.0, -4.5)
+    game._update_aim_preview()
+    _assert(game.aim_label.text.begins_with("SERVE FAULT IF HIT") and game.aim_label.text.contains("diagonal"), "preview warns about the service court")
+    _assert(game.marker_material.albedo_color == game.AIM_BLOCKED, "marker shows the serve would be a fault")
+    game._attempt_hit(false)
+    _assert(fifth.phase == P.SERVE_IN_FLIGHT, "the serve is still hit")
+    await _until(func() -> bool: return fifth.is_over())
+    _assert(fifth.fault == F.SERVE_COURT and fifth.fault_side == 1 and game.status_label.text.contains("SERVICE FAULT"), "it is called a service fault when it lands")
+
+    # Rally 6: a legal serve from the spot to the diagonal court shows no warning.
+    await _until(func() -> bool: return game.referee.rally != fifth)
+    game._reset_ball()
+    game.target_position = Vector3(-1.5, 0.0, -4.5)
+    game._update_aim_preview()
+    _assert(game.aim_label.text.begins_with("AIM OK") and game.marker_material.albedo_color == game.AIM_OK, "a legal serve previews as OK")
 
     game.queue_free()
     if errors.is_empty():

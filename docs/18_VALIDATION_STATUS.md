@@ -107,6 +107,16 @@
 - [x] Training scene, 120 headless frames — exit 0, no script errors.
 - [ ] No human has played a rally under the new rules or read the new HUD messages on screen.
 
+## RP-022 results recorded 2026-11-17 (same machine and Godot build)
+
+- [x] Headless import — exit 0, no errors or warnings printed.
+- [x] Unit tests: rules 7, net collision 11, court dimensions 39, gameplay tuning 15, shot solver 24, camera 18, input 26, swing contact 22, rally state 40, rally controller 13 — all pass.
+- [x] `tests/integration/test_training_preview.gd` — `PASS: 20 training preview checks`.
+- [x] `tests/integration/test_training_rally.gd` — `PASS: 23 training rally checks` (six rallies, including a foot fault and a wrong-court serve).
+- [x] Training scene, 120 headless frames — exit 0, no script errors.
+- [ ] Serve rules were written from the project's rules doc and general knowledge of the rulebook, not checked line by line against the 2026 USA Pickleball text.
+- [ ] No human has served a ball in the game.
+
 Still not performed: F5 gameplay with a human, Windows export, MCP editor connection.
 
 Do not describe this project as a fully validated production game.

@@ -8,8 +8,10 @@ class_name RallyState
 ## and any of them can go to ENDED with a fault. A rally ends exactly once: after ENDED,
 ## and for duplicate or stale event ids, apply() changes nothing.
 ##
-## Not here yet: serve legality and service courts (RP-022), kitchen and momentum faults
-## (RP-023), points and side-out (RP-024). A serve only has to land in on the receiver's half.
+## Serves: the server must stand behind the baseline on the side they serve from, and the
+## ball must land in the diagonal service court (kitchen line is a fault, other lines in).
+## Every serve is treated as a drop serve, so there are no swing-motion checks.
+## Not here yet: kitchen and momentum faults (RP-023), points and side-out (RP-024).
 
 enum Phase { WAITING_FOR_SERVE, SERVE_IN_FLIGHT, WAITING_FOR_RETURN, RETURN_IN_FLIGHT, OPEN_RALLY, ENDED }
 enum Fault {
@@ -20,10 +22,13 @@ enum Fault {
     DOUBLE_BOUNCE, ## ball bounced twice before being returned
     VOLLEY_BEFORE_BOUNCE, ## serve or return hit out of the air (two-bounce rule)
     DOUBLE_HIT, ## same side hit the ball twice in a row
+    SERVE_POSITION, ## server was not behind the baseline in the correct half (foot fault)
+    SERVE_COURT, ## serve landed in the kitchen or the wrong service court
 }
 
 var rally_id: int = 0
 var server_side: int = 1
+var serve_from_right: bool = true ## which of the server's courts they serve from
 var phase: Phase = Phase.WAITING_FOR_SERVE
 var last_hitter: int = 0
 var bounces_since_hit: int = 0
@@ -33,9 +38,10 @@ var winner_side: int = 0 ## side that won the rally; 0 until it ends
 var last_event_id: int = -1
 var log: Array[RallyEvent] = [] ## every accepted event, in order
 
-func _init(id: int = 0, serving_side: int = 1) -> void:
+func _init(id: int = 0, serving_side: int = 1, from_right: bool = true) -> void:
     rally_id = id
     server_side = serving_side
+    serve_from_right = from_right
 
 func is_over() -> bool:
     return phase == Phase.ENDED
@@ -51,17 +57,21 @@ func apply(event: RallyEvent) -> bool:
     last_event_id = event.id
     log.append(event)
     match event.type:
-        RallyEvent.Type.HIT: _on_hit(event.side)
+        RallyEvent.Type.HIT: _on_hit(event.side, event.player_position)
         RallyEvent.Type.BOUNCE: _on_bounce(event.position)
         RallyEvent.Type.NET: _end(Fault.NET, last_hitter)
     return true
 
-func _on_hit(side: int) -> void:
+func _on_hit(side: int, feet: Vector3) -> void:
     if side == last_hitter:
         _end(Fault.DOUBLE_HIT, side)
         return
     match phase:
         Phase.WAITING_FOR_SERVE:
+            if not CourtDimensions.legal_serve_position(feet, side == 1, serve_from_right):
+                last_hitter = side
+                _end(Fault.SERVE_POSITION, side)
+                return
             phase = Phase.SERVE_IN_FLIGHT
         Phase.SERVE_IN_FLIGHT, Phase.RETURN_IN_FLIGHT:
             _end(Fault.VOLLEY_BEFORE_BOUNCE, side)
@@ -84,6 +94,9 @@ func _on_bounce(at: Vector3) -> void:
         return
     bounces_since_hit += 1
     if phase == Phase.SERVE_IN_FLIGHT:
+        if not CourtDimensions.legal_serve_target(at, server_side == 1, serve_from_right):
+            _end(Fault.SERVE_COURT, server_side)
+            return
         phase = Phase.WAITING_FOR_RETURN
     elif phase == Phase.RETURN_IN_FLIGHT:
         phase = Phase.OPEN_RALLY
