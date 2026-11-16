@@ -21,4 +21,13 @@
 - [ ] Live Claude Code ↔ Godot MCP connection — requires the user's installed applications and approvals.
 - [ ] Multiplayer runtime — not implemented in this starter.
 
-**Next step:** perform the two headless Godot commands described in `START_HERE.md`; record real results. If an error appears, give Claude the exact message and have it repair the starter before building new systems. Do not describe this project as a fully validated production game.
+## Headless results recorded 2026-11-17 (Windows 11, Godot 4.7.2.stable.official.ed1daf0bf)
+
+- [x] `godot --headless --path . --editor --quit` — exit 0, no errors or warnings printed.
+- [x] `tests/unit/test_rules.gd` — `PASS: 7 rules smoke checks`, exit 0.
+- [x] `tests/unit/test_net_collision.gd` — `PASS: 11 net collision checks`, exit 0.
+- [x] `godot --headless --path . --quit-after 120 res://scenes/game/training.tscn` — exit 0, no script errors. This only proves the scene loads and ticks; nobody played it.
+
+Still not performed: F5 gameplay with a human, Windows export, MCP editor connection.
+
+Do not describe this project as a fully validated production game.
