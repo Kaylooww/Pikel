@@ -1,6 +1,6 @@
 extends Resource
 class_name GameplayTuning
-## Every gameplay feel number in one place. Edit `res://config/gameplay_tuning.tres` in the
+## Every gameplay feel number in one place. Edit config/gameplay_tuning.tres in the
 ## inspector (or assign a different GameplayTuning to a node's `tuning` property) to retune;
 ## the scripts that read these values do not need to change.
 ## Court sizes are NOT tuning: they live in CourtDimensions.
