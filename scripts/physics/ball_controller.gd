@@ -18,24 +18,25 @@ func reset_ball(home_pos: Vector3) -> void:
     bounces_this_half = 0
     current_side = CourtDimensions.side_from_z(home_pos.z)
 
-func launch(target: Vector3, soft: bool, hitter_side: int) -> void:
-    var flat: Vector3 = Vector3(target.x - position.x, 0.0, target.z - position.z)
-    var speed: float = tuning.dink_speed if soft else tuning.drive_speed
-    var flight_time: float = clampf(flat.length() / speed, tuning.min_flight_time, tuning.max_flight_time)
-    # Solve a no-drag ballistic arc that lands at visual-ball radius.
-    var new_y_speed: float = (RADIUS - position.y + 0.5 * tuning.gravity * flight_time * flight_time) / flight_time
-    ball_velocity = Vector3(flat.x / flight_time, new_y_speed, flat.z / flight_time)
-    moving = true
-    bounces_this_half = 0
-    current_side = CourtDimensions.side_from_z(position.z)
-    last_hitter = hitter_side
+## Hits the ball toward `target` if the solver finds a shot that clears the net.
+## The ball is left untouched when the returned solution is not ok.
+func launch(target: Vector3, soft: bool, hitter_side: int) -> ShotSolver.Solution:
+    var shot: ShotSolver.Solution = ShotSolver.solve(position, target, soft, tuning)
+    if shot.ok:
+        ball_velocity = shot.velocity
+        moving = true
+        bounces_this_half = 0
+        current_side = CourtDimensions.side_from_z(position.z)
+        last_hitter = hitter_side
+    return shot
 
 func _physics_process(delta: float) -> void:
     if not moving:
         return
     var previous: Vector3 = position
+    # Exact step for constant gravity, so flight matches ShotSolver's parabola.
+    position += ball_velocity * delta + Vector3.DOWN * (0.5 * tuning.gravity * delta * delta)
     ball_velocity.y -= tuning.gravity * delta
-    position += ball_velocity * delta
     if NetCollision.hits_net(previous, position, RADIUS):
         _signal_fault("NET — reset rally")
         return
@@ -43,6 +44,9 @@ func _physics_process(delta: float) -> void:
         current_side = CourtDimensions.side_from_z(position.z)
         bounces_this_half = 0
     if position.y <= RADIUS and ball_velocity.y < 0.0:
+        # Back up to the moment of floor contact so in/out is judged on the real landing point.
+        if previous.y > position.y:
+            position = previous.lerp(position, clampf((previous.y - RADIUS) / (previous.y - position.y), 0.0, 1.0))
         position.y = RADIUS
         if not CourtDimensions.inside_court(position):
             _signal_fault("OUT — reset rally")

@@ -46,6 +46,7 @@ func _initialize() -> void:
     _assert(is_equal_approx(ball.ball_velocity.x, 1.0), "friction scales horizontal speed")
 
     # A slower drive speed means a longer flight, so lower horizontal velocity.
+    custom.gravity = 9.81 # a real arc; with zero gravity no shot can clear the net
     custom.min_flight_time = 0.0
     custom.max_flight_time = 10.0
     custom.drive_speed = 10.0
