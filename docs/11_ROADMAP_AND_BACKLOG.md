@@ -19,7 +19,7 @@ Progress is tracked here: `[x]` done, `[ ]` open. `prompts/NEXT.md` picks the fi
 - [x] **RP-001 (P0):** Open Godot 4.7.2 project and fix any import/parser errors. **Acceptance:** no headless import errors.
 - [x] **RP-002 (P0):** Run existing smoke tests; remove any faulty assertions. **Acceptance:** green tests with documented output.
 - [ ] **RP-003 (P0):** Manually test menu → practice → mouse aim/drive/dink/reset. **Acceptance:** reproduction report.
-- [ ] **RP-004 (P0):** Freeze units and court dimensions. **Acceptance:** exact court predicates documented and tested.
+- [x] **RP-004 (P0):** Freeze units and court dimensions. **Acceptance:** exact court predicates documented and tested.
 - [ ] **RP-005 (P0):** Establish reusable gameplay tuning config. **Acceptance:** changes don't require replacing physics logic.
 
 ## Sprint 1: ball and input quality

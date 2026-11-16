@@ -10,6 +10,23 @@ Implement the applicable **2026 USA Pickleball Official Rulebook** from <https:/
 - World origin at net center, X across width, Z along length, Y up.
 - Singles and doubles have the same court dimensions; doubles adds server sequence and position bookkeeping.
 
+## Frozen court predicates (implemented and tested)
+These live in `scripts/core/court_dimensions.gd` and are pinned by `tests/unit/test_court_dimensions.gd`. Change them only together with that test.
+
+- **Units:** meters. Every dimension is measured to the **outside edge** of its line, and painted lines (2 in = 0.0508 m) sit inside the dimension they mark.
+- **Contact point:** predicates take the ball's contact point, meaning its center projected onto the floor. Height is ignored.
+- **Handedness:** a player facing -Z has +X on their right. Home (z > 0) faces -Z, so home's right court is +X. Away faces +Z, so away's right court is -X.
+
+| Predicate | True when | Lines |
+|---|---|---|
+| `inside_court(pos)` | `abs(x) <= 3.048` and `abs(z) <= 6.7056` | Sidelines and baselines are in; 0.1 mm epsilon for 32-bit float rounding only |
+| `inside_kitchen(pos)` | inside court and `abs(z) <= 2.1336` | Kitchen line is part of the kitchen |
+| `side_from_z(z)` | returns +1 for `z >= 0` (home), -1 otherwise | Net plane counts as home |
+| `net_height_at(x)` | 0.8636 at center rising linearly to 0.9144 at the sidelines and beyond | — |
+| `legal_serve_target(pos, from_home, from_right)` | inside court, beyond the kitchen, on the receiver's half, in the court diagonal to the server | Kitchen line is a fault; centerline, sideline and baseline are in |
+
+Net posts are 22 ft apart (`NET_HALF_WIDTH` = 3.3528 m). The ball radius (0.105 m) is still the exaggerated prototype value, not regulation.
+
 ## Essential predicates
 - `landing_in_bounds`: include boundary line as in (physical ball contact vs line geometry to be resolved).
 - `served_to_correct_diagonal_service_court`: not kitchen, correct opposite-side service rectangle.

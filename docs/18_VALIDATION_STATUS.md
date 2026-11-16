@@ -28,6 +28,15 @@
 - [x] `tests/unit/test_net_collision.gd` — `PASS: 11 net collision checks`, exit 0.
 - [x] `godot --headless --path . --quit-after 120 res://scenes/game/training.tscn` — exit 0, no script errors. This only proves the scene loads and ticks; nobody played it.
 
+## RP-004 results recorded 2026-11-17 (same machine and Godot build)
+
+- [x] Headless import — exit 0, no errors or warnings printed.
+- [x] `test_rules.gd` — `PASS: 7 rules smoke checks` (two serve assertions corrected: they had the diagonal mirrored).
+- [x] `test_net_collision.gd` — `PASS: 11 net collision checks`.
+- [x] `test_court_dimensions.gd` — `PASS: 29 court dimension checks`.
+- [x] Training scene, 120 headless frames — exit 0, no script errors.
+- [ ] Moved court lines and widened net have not been looked at on screen.
+
 Still not performed: F5 gameplay with a human, Windows export, MCP editor connection.
 
 Do not describe this project as a fully validated production game.
