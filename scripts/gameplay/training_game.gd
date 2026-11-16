@@ -1,5 +1,6 @@
 extends Node3D
 ## Playable training vertical slice, NOT a complete game or legal rules engine.
+@export var tuning: GameplayTuning = preload("res://config/gameplay_tuning.tres")
 @onready var court: Node3D = $Court
 @onready var player: PickleballPlayer = $HomePlayer
 @onready var bot: PickleballPlayer = $PracticeOpponent
@@ -59,7 +60,7 @@ func _process(_delta: float) -> void:
     if ball.moving and not resetting:
         var want: Vector3 = Vector3(clampf(ball.position.x, -2.9, 2.9), 0, -4.8)
         bot.ai_direction = (want - bot.position).normalized() if ball.position.z < 1.0 else (Vector3(0, 0, -5.1) - bot.position).normalized()
-        if bot_should_return and ball.position.z < -0.2 and ball.position.distance_to(bot.position + Vector3.UP * 1.0) < 2.25:
+        if bot_should_return and ball.position.z < -0.2 and ball.position.distance_to(bot.position + Vector3.UP * tuning.bot_contact_height) < tuning.bot_reach:
             bot_should_return = false
             bot_hits += 1
             ball.launch(Vector3(clampf(player.position.x, -2.4, 2.4), 0.0, 4.55), false, -1)
@@ -88,7 +89,7 @@ func _attempt_hit(soft: bool) -> void:
     if ball.position.z <= 0.0:
         _set_status("Ball is still on the other half.")
         return
-    if ball.position.distance_to(player.position + Vector3.UP * 0.95) > 2.05:
+    if ball.position.distance_to(player.position + Vector3.UP * tuning.player_contact_height) > tuning.player_reach:
         _set_status("Too far from ball — move closer.")
         return
     player_hits += 1
@@ -109,7 +110,7 @@ func _on_ball_fault(reason: String) -> void:
         return
     resetting = true
     bot_should_return = false
-    await get_tree().create_timer(1.1).timeout
+    await get_tree().create_timer(tuning.fault_reset_delay).timeout
     if is_inside_tree():
         _reset_ball()
 

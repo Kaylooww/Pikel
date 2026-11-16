@@ -58,6 +58,8 @@ Prototype uses Godot `_physics_process()` for fixed-step ball integration. Targe
 Messages must use a versioned, validated serialization format; never trust client-declared score, contact success or final shot outcome. The above schemas are a *contract proposal* and have not been implemented.
 
 ## Data-driven tuning
+**Implemented:** `scripts/core/gameplay_tuning.gd` (`GameplayTuning` resource) with the shipped values in `config/gameplay_tuning.tres`. It covers gravity, shot speeds, flight-time range, bounce, player speeds and movement limits, reach, and the training reset delay. The ball, player and training scripts each expose a `tuning` property that defaults to the shipped file, so a scene can assign a different resource (for example a faster bot). To retune, open the `.tres` in the Godot inspector; values equal to the script defaults are not written to the file. Camera offsets and bot positions are still literals in `training_game.gd` (RP-013).
+
 Use named `.tres` resources for move speeds, swing windows, camera offsets, target assist, bounce coefficients and match presets. Preserve reproducible defaults under Git. Avoid tuning gameplay by editing unrelated Godot node scripts.
 
 ## Maintainability rules

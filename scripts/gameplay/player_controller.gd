@@ -3,8 +3,7 @@ class_name PickleballPlayer
 ## Prototype player controller: one local character plus one basic scripted practice opponent.
 @export var home_side: bool = true
 @export var controlled_by_ai: bool = false
-@export var move_speed: float = 5.4
-@export var sprint_speed: float = 7.2
+@export var tuning: GameplayTuning = preload("res://config/gameplay_tuning.tres")
 var ai_direction: Vector3 = Vector3.ZERO
 var facing_direction: Vector3 = Vector3.FORWARD
 
@@ -24,13 +23,13 @@ func _physics_process(_delta: float) -> void:
         if Input.is_key_pressed(KEY_W): move.z -= 1.0
         if Input.is_key_pressed(KEY_S): move.z += 1.0
     move = move.normalized()
-    var speed: float = sprint_speed if (not controlled_by_ai and Input.is_key_pressed(KEY_SHIFT)) else move_speed
+    var speed: float = tuning.sprint_speed if (not controlled_by_ai and Input.is_key_pressed(KEY_SHIFT)) else tuning.move_speed
     velocity = move * speed
     move_and_slide()
-    position.x = clampf(position.x, -3.65, 3.65)
+    position.x = clampf(position.x, -tuning.max_side_distance, tuning.max_side_distance)
     if home_side:
-        position.z = clampf(position.z, 0.35, 7.35)
+        position.z = clampf(position.z, tuning.min_net_distance, tuning.max_back_distance)
     else:
-        position.z = clampf(position.z, -7.35, -0.35)
+        position.z = clampf(position.z, -tuning.max_back_distance, -tuning.min_net_distance)
     if move.length_squared() > 0.01:
         facing_direction = move

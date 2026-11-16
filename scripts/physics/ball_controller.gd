@@ -3,7 +3,7 @@ class_name PickleballBall
 ## Fixed-step, custom training physics. Not a complete competition-grade solver.
 signal bounced(side: int, side_bounces: int, contact_point: Vector3)
 signal fault(reason: String)
-const GRAVITY: float = 9.81
+@export var tuning: GameplayTuning = preload("res://config/gameplay_tuning.tres")
 const RADIUS: float = CourtDimensions.BALL_VISUAL_RADIUS
 var ball_velocity: Vector3 = Vector3.ZERO
 var moving: bool = false
@@ -20,10 +20,10 @@ func reset_ball(home_pos: Vector3) -> void:
 
 func launch(target: Vector3, soft: bool, hitter_side: int) -> void:
     var flat: Vector3 = Vector3(target.x - position.x, 0.0, target.z - position.z)
-    var speed: float = 8.0 if soft else 12.0
-    var flight_time: float = clampf(flat.length() / speed, 0.58, 1.15)
+    var speed: float = tuning.dink_speed if soft else tuning.drive_speed
+    var flight_time: float = clampf(flat.length() / speed, tuning.min_flight_time, tuning.max_flight_time)
     # Solve a no-drag ballistic arc that lands at visual-ball radius.
-    var new_y_speed: float = (RADIUS - position.y + 0.5 * GRAVITY * flight_time * flight_time) / flight_time
+    var new_y_speed: float = (RADIUS - position.y + 0.5 * tuning.gravity * flight_time * flight_time) / flight_time
     ball_velocity = Vector3(flat.x / flight_time, new_y_speed, flat.z / flight_time)
     moving = true
     bounces_this_half = 0
@@ -34,7 +34,7 @@ func _physics_process(delta: float) -> void:
     if not moving:
         return
     var previous: Vector3 = position
-    ball_velocity.y -= GRAVITY * delta
+    ball_velocity.y -= tuning.gravity * delta
     position += ball_velocity * delta
     if NetCollision.hits_net(previous, position, RADIUS):
         _signal_fault("NET — reset rally")
@@ -56,9 +56,9 @@ func _physics_process(delta: float) -> void:
         if bounces_this_half >= 2:
             _signal_fault("DOUBLE BOUNCE — reset rally")
             return
-        ball_velocity.y = -ball_velocity.y * 0.68
-        ball_velocity.x *= 0.85
-        ball_velocity.z *= 0.85
+        ball_velocity.y = -ball_velocity.y * tuning.bounce_restitution
+        ball_velocity.x *= tuning.bounce_friction
+        ball_velocity.z *= tuning.bounce_friction
     if absf(position.z) > 24.0 or absf(position.x) > 18.0 or position.y < -2.0:
         _signal_fault("OUT — reset rally")
 
