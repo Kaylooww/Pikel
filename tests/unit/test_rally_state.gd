@@ -110,6 +110,38 @@ func _initialize() -> void:
     _hit(r, HOME)
     _assert(_bounce(r, Vector3(1.5, 0.0, -1.0)) and not r.is_over(), "after the serve, any spot in the court is fine, kitchen included")
 
+    # Kitchen (RP-023). After _open_rally(HOME) the ball has bounced once on the home half.
+    var outside := Vector3(0.0, 0.0, 3.0)
+    var in_kitchen := Vector3(0.0, 0.0, 1.0)
+    r = _open_rally(HOME)
+    _assert(_hit_from(r, HOME, in_kitchen, 100) and not r.is_over(), "hitting a bounced ball while standing in the kitchen is allowed")
+    _hit_from(r, AWAY, Vector3(0.0, 0.0, -1.0), 130)
+    _assert(_ended(r, F.KITCHEN_VOLLEY, AWAY), "volleying while standing in the kitchen is a fault")
+    r = _volley_ready()
+    _hit_from(r, AWAY, Vector3(0.0, 0.0, -CourtDimensions.KITCHEN_DEPTH), 130)
+    _assert(_ended(r, F.KITCHEN_VOLLEY, AWAY), "volleying with a foot on the kitchen line is a fault")
+    r = _volley_ready()
+    _assert(_hit_from(r, AWAY, Vector3(0.0, 0.0, -CourtDimensions.KITCHEN_DEPTH - 0.05), 130) and not r.is_over(), "volleying from just behind the kitchen line is fine")
+    r = _volley_ready()
+    _assert(_hit_from(r, AWAY, Vector3(CourtDimensions.HALF_WIDTH + 0.5, 0.0, -1.0), 130) and not r.is_over(), "beside the court, level with the kitchen, is not the kitchen")
+
+    # Momentum: stepping in right after a volley.
+    r = _volley_ready()
+    _hit_from(r, AWAY, Vector3(0.0, 0.0, -3.0), 130)
+    _assert(r.apply(RallyEvent.kitchen_entry(_id(), r.rally_id, 130 + r.momentum_ticks, AWAY)), "stepping in at the edge of the momentum window is acted on")
+    _assert(_ended(r, F.KITCHEN_MOMENTUM, AWAY), "momentum into the kitchen after a volley is a fault")
+    r = _volley_ready()
+    _hit_from(r, AWAY, Vector3(0.0, 0.0, -3.0), 130)
+    var events_before: int = r.log.size()
+    _assert(not r.apply(RallyEvent.kitchen_entry(_id(), r.rally_id, 131 + r.momentum_ticks, AWAY)) and not r.is_over(), "stepping in after the window is not a fault")
+    _assert(not r.apply(RallyEvent.kitchen_entry(_id(), r.rally_id, 140, HOME)) and not r.is_over(), "the other player may walk in freely")
+    _assert(r.log.size() == events_before, "harmless kitchen entries are not logged")
+    r = _open_rally(HOME)
+    _hit_from(r, HOME, outside, 100) # groundstroke, not a volley
+    _assert(not r.apply(RallyEvent.kitchen_entry(_id(), r.rally_id, 105, HOME)) and not r.is_over(), "following a groundstroke into the kitchen is fine")
+    r = RallyState.new(1, HOME)
+    _assert(not r.apply(RallyEvent.kitchen_entry(_id(), 1, 5, AWAY)), "kitchen entry before the serve is ignored")
+
     # Mirrored: away serves.
     r = RallyState.new(2, AWAY)
     _assert(not _hit(r, HOME) and r.phase == P.WAITING_FOR_SERVE, "only the server can start the rally")
@@ -148,6 +180,15 @@ func _open_rally(server: int) -> RallyState:
     _hit(r, -server)
     _bounce(r, HOME_COURT if server == HOME else AWAY_COURT)
     return r
+
+## An open rally in which home has just hit a groundstroke, so away can volley it.
+func _volley_ready() -> RallyState:
+    var r: RallyState = _open_rally(HOME)
+    _hit_from(r, HOME, Vector3(0.0, 0.0, 3.0), 100)
+    return r
+
+func _hit_from(r: RallyState, side: int, feet: Vector3, tick: int) -> bool:
+    return r.apply(RallyEvent.hit(_id(), r.rally_id, tick, side, Vector3.ZERO, feet))
 
 func _ended(r: RallyState, reason: RallyState.Fault, guilty: int) -> bool:
     return r.is_over() and r.fault == reason and r.fault_side == guilty and r.winner_side == -guilty

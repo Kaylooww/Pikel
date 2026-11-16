@@ -34,5 +34,8 @@ class_name GameplayTuning
 @export var bot_reach: float = 2.25
 @export var bot_contact_height: float = 1.0
 
+@export_group("Rules")
+@export var momentum_window: float = 0.6 ## seconds after a volley in which stepping into the kitchen is a fault
+
 @export_group("Training")
 @export var fault_reset_delay: float = 1.1 ## seconds between a fault and the next practice ball

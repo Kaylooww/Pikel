@@ -11,7 +11,10 @@ class_name RallyState
 ## Serves: the server must stand behind the baseline on the side they serve from, and the
 ## ball must land in the diagonal service court (kitchen line is a fault, other lines in).
 ## Every serve is treated as a drop serve, so there are no swing-motion checks.
-## Not here yet: kitchen and momentum faults (RP-023), points and side-out (RP-024).
+## Kitchen: a volley (hit before the ball bounces) is a fault if the hitter stands in the
+## kitchen, line included, or steps into it within `momentum_ticks` after the volley.
+## Standing in the kitchen and hitting a ball that has bounced are both fine.
+## Not here yet: points and side-out (RP-024).
 
 enum Phase { WAITING_FOR_SERVE, SERVE_IN_FLIGHT, WAITING_FOR_RETURN, RETURN_IN_FLIGHT, OPEN_RALLY, ENDED }
 enum Fault {
@@ -24,6 +27,8 @@ enum Fault {
     DOUBLE_HIT, ## same side hit the ball twice in a row
     SERVE_POSITION, ## server was not behind the baseline in the correct half (foot fault)
     SERVE_COURT, ## serve landed in the kitchen or the wrong service court
+    KITCHEN_VOLLEY, ## volleyed while standing in the kitchen
+    KITCHEN_MOMENTUM, ## stepped into the kitchen right after a volley
 }
 
 var rally_id: int = 0
@@ -37,6 +42,8 @@ var fault_side: int = 0 ## side that committed the fault
 var winner_side: int = 0 ## side that won the rally; 0 until it ends
 var last_event_id: int = -1
 var log: Array[RallyEvent] = [] ## every accepted event, in order
+var momentum_ticks: int = 36 ## how long after a volley stepping into the kitchen is still a fault (0.6 s at 60 Hz)
+var _volley_ticks: Dictionary = {} ## side -> tick of that side's latest volley
 
 func _init(id: int = 0, serving_side: int = 1, from_right: bool = true) -> void:
     rally_id = id
@@ -54,15 +61,21 @@ func apply(event: RallyEvent) -> bool:
         return false
     if phase == Phase.WAITING_FOR_SERVE and not (event.type == RallyEvent.Type.HIT and event.side == server_side):
         return false
+    if event.type == RallyEvent.Type.KITCHEN_ENTRY and not _within_momentum(event.side, event.tick):
+        return false # walking into the kitchen is only a problem right after a volley
     last_event_id = event.id
     log.append(event)
     match event.type:
-        RallyEvent.Type.HIT: _on_hit(event.side, event.player_position)
+        RallyEvent.Type.HIT: _on_hit(event.side, event.player_position, event.tick)
         RallyEvent.Type.BOUNCE: _on_bounce(event.position)
         RallyEvent.Type.NET: _end(Fault.NET, last_hitter)
+        RallyEvent.Type.KITCHEN_ENTRY: _end(Fault.KITCHEN_MOMENTUM, event.side)
     return true
 
-func _on_hit(side: int, feet: Vector3) -> void:
+func _within_momentum(side: int, tick: int) -> bool:
+    return _volley_ticks.has(side) and tick - int(_volley_ticks[side]) <= momentum_ticks
+
+func _on_hit(side: int, feet: Vector3, tick: int) -> void:
     if side == last_hitter:
         _end(Fault.DOUBLE_HIT, side)
         return
@@ -78,6 +91,12 @@ func _on_hit(side: int, feet: Vector3) -> void:
             return
         Phase.WAITING_FOR_RETURN:
             phase = Phase.RETURN_IN_FLIGHT
+        Phase.OPEN_RALLY:
+            if bounces_since_hit == 0: # a volley
+                if CourtDimensions.inside_kitchen(feet):
+                    _end(Fault.KITCHEN_VOLLEY, side)
+                    return
+                _volley_ticks[side] = tick
     last_hitter = side
     bounces_since_hit = 0
 
