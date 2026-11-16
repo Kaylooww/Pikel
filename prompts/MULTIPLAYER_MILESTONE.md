@@ -1,0 +1,3 @@
+# Claude prompt: multiplayer milestone
+
+Read `docs/02_TECHNICAL_ARCHITECTURE.md`, `docs/04_BALL_PHYSICS.md`, `docs/05_PICKLEBALL_RULES.md`, `docs/06_NETWORKING.md`, and `docs/10_TESTING_AND_QA.md`. Do not retrofit networking by just making the client publish its ball transform. Draft an authoritative-server single-match protocol: input packets, tick sequencing, player ownership, server collision and scoring, snapshot interpolation, prediction/reconciliation, timeout and reconnect behavior, simple LAN host/join. Implement only the first testable LAN milestone and include a two-process local reproduction procedure. Do not claim Internet/Steam support until deployed and tested.

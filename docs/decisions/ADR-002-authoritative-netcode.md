@@ -1,0 +1,3 @@
+# ADR-002 — Server authoritative competitive play
+
+**Status:** proposed for the networking phase. **Decision:** Godot headless match server is the only authority for player legal movement, ball contacts, faults, scoring and match lifecycle. Clients transmit sequenced inputs and can predict local visuals; snapshots repair divergence. **Alternatives rejected:** client-hosted ball truth without validation (easy to cheat/desync); indiscriminate Node3D transform RPCs (insufficient game-event coherence). **Consequence:** more engineering and hosting cost, but consistent competition. **Not yet implemented.**

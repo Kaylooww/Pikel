@@ -1,0 +1,3 @@
+# Claude prompt: integrate a team-made Blender character
+
+Read `docs/08_3D_ASSET_PIPELINE.md`. We have exported a character model to `assets/models/characters/<filename>.glb`. Inspect the actual imported GLB nodes, material slots, skeleton, animations and orientation. Propose a minimal Godot wrapper scene that preserves `CharacterBody3D`, capsule collider, input controller, paddle collision assumptions and network-relevant transforms. Do not edit the source GLB or destructively replace the existing player scene. Implement an optional visual child, document expected rig names, re-import, then test and report exactly what was validated. If GLB is missing, create only the integration contract and don't pretend to have imported it.

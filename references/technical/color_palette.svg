@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 390">
+<rect width="920" height="390" fill="#f3f8fc"/><text x="36" y="56" font-family="Arial" font-size="31" font-weight="bold" fill="#17324d">RALLYPOP • ORIGINAL COLOR PALETTE</text>
+<g font-family="Arial" font-size="16" fill="#17324d" text-anchor="middle">
+<rect x="35" y="113" width="198" height="130" rx="12" fill="#17324D"/><rect x="252" y="113" width="198" height="130" rx="12" fill="#285C8D"/><rect x="469" y="113" width="198" height="130" rx="12" fill="#32B6AD"/><rect x="686" y="113" width="198" height="130" rx="12" fill="#FF816C"/>
+<text x="134" y="273" font-weight="bold">DEEP NAVY</text><text x="134" y="296">#17324D</text><text x="351" y="273" font-weight="bold">COURT BLUE</text><text x="351" y="296">#285C8D</text><text x="568" y="273" font-weight="bold">COURT TEAL</text><text x="568" y="296">#32B6AD</text><text x="785" y="273" font-weight="bold">CORAL</text><text x="785" y="296">#FF816C</text>
+<circle cx="198" cy="347" r="21" fill="#FFE06B"/><text x="265" y="352" text-anchor="start">Sun yellow #FFE06B</text><circle cx="579" cy="347" r="21" fill="#BDE8F1"/><text x="620" y="352" text-anchor="start">Sky #BDE8F1</text>
+</g></svg>

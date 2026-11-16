@@ -1,0 +1,24 @@
+# Godot 4
+.godot/
+*.tmp
+*.bak
+*.translation
+# Local builds and logs
+builds/*
+!builds/.gitkeep
+logs/*
+!logs/.gitkeep
+# Local agent configuration and secrets
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+# Common OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+# Blender autosaves
+*.blend1
+*.blend2

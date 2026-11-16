@@ -1,0 +1,23 @@
+[gd_scene load_steps=5 format=3]
+[ext_resource type="Script" path="res://scripts/gameplay/training_game.gd" id="1_game"]
+[ext_resource type="PackedScene" path="res://scenes/court/court.tscn" id="2_court"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://scenes/ball/ball.tscn" id="4_ball"]
+
+[node name="TrainingGame" type="Node3D"]
+script = ExtResource("1_game")
+
+[node name="Court" parent="." instance=ExtResource("2_court")]
+
+[node name="HomePlayer" parent="." instance=ExtResource("3_player")]
+
+[node name="PracticeOpponent" parent="." instance=ExtResource("3_player")]
+home_side = false
+controlled_by_ai = true
+
+[node name="Ball" parent="." instance=ExtResource("4_ball")]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.819152, 0.573576, 0, -0.573576, 0.819152, 0, 9.2, 12)
+current = true
+fov = 58.0

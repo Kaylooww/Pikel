@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 650">
+<rect width="940" height="650" fill="#f3f8fc"/><text x="55" y="54" fill="#17324d" font-size="31" font-family="Arial" font-weight="700">PICKLEBALL COURT • 20 × 44 FT</text>
+<text x="55" y="83" fill="#577389" font-size="17" font-family="Arial">Top-down schematic • net at Z=0 • Y points upward in the 3D world</text>
+<rect x="282" y="116" width="278" height="460" fill="#285c8d" rx="2" stroke="#d8e9f1" stroke-width="4"/>
+<rect x="283" y="278" width="276" height="68" fill="#32b6ad"/><rect x="283" y="346" width="276" height="68" fill="#32b6ad"/>
+<g stroke="#fff" stroke-width="4" fill="none"><rect x="285" y="118" width="272" height="456"/><path d="M285 278H557M285 414H557M421 118V278M421 414V574"/></g>
+<path d="M273 346H569" stroke="#17324d" stroke-width="9"/><path d="M273 343H569" stroke="#fff" stroke-width="3"/>
+<g fill="white" font-size="18" font-family="Arial" text-anchor="middle"><text x="352" y="194">SERVICE</text><text x="490" y="194">SERVICE</text><text x="421" y="318">NON-VOLLEY ZONE</text><text x="421" y="387">NON-VOLLEY ZONE</text><text x="352" y="492">SERVICE</text><text x="490" y="492">SERVICE</text></g>
+<g stroke="#577389" stroke-width="2" fill="none"><path d="M594 116H616M594 576H616M609 116V576"/><path d="M257 278H242M257 346H242M249 278V346"/></g>
+<g font-family="Arial" font-size="19" fill="#17324d" font-weight="bold"><text x="65" y="192">Width:</text><text x="65" y="216">6.096 m / 20 ft</text><text x="631" y="352" transform="rotate(90 631 352)">13.4112 m / 44 ft</text><text x="60" y="311">Kitchen</text><text x="60" y="333">2.1336 m</text><text x="574" y="338">NET</text></g>
+<path d="M170 318H240" stroke="#23a4a6" stroke-width="3"/><path d="M574 342H670" stroke="#23a4a6" stroke-width="3"/>
+<rect x="680" y="136" width="225" height="160" rx="18" fill="#e2f2f3"/><text x="702" y="171" font-family="Arial" font-size="20" font-weight="bold" fill="#17324d">NET HEIGHT</text><text x="702" y="206" font-family="Arial" font-size="19" fill="#17324d">Center: 0.8636 m</text><text x="702" y="237" font-family="Arial" font-size="19" fill="#17324d">Sides: 0.9144 m</text><text x="702" y="269" font-family="Arial" font-size="15" fill="#577389">Line width: 0.0508 m</text>
+<text x="55" y="624" fill="#577389" font-family="Arial" font-size="14">Illustration for development • validate competition details with 2026 USA Pickleball rulebook</text>
+</svg>

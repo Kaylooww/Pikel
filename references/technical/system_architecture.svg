@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 590">
+<rect width="1020" height="590" fill="#f3f8fc"/><text x="44" y="54" font-family="Arial" font-size="30" font-weight="bold" fill="#17324d">TARGET ONLINE MATCH ARCHITECTURE</text><text x="44" y="84" font-family="Arial" font-size="17" fill="#577389">Future plan, not implemented in the starter</text>
+<defs><marker id="a" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#41687f"/></marker></defs>
+<rect x="42" y="145" width="250" height="170" rx="18" fill="#32b6ad"/><rect x="729" y="145" width="250" height="170" rx="18" fill="#32b6ad"/>
+<rect x="358" y="130" width="305" height="263" rx="19" fill="#17324d"/>
+<g font-family="Arial" text-anchor="middle"><text x="167" y="184" font-size="25" font-weight="bold" fill="#17324d">CLIENT A</text><text x="167" y="220" font-size="18" fill="#17324d">Input + aim</text><text x="167" y="247" font-size="18" fill="#17324d">Local prediction</text><text x="167" y="274" font-size="18" fill="#17324d">Remote interpolation</text>
+<text x="854" y="184" font-size="25" font-weight="bold" fill="#17324d">CLIENT B</text><text x="854" y="220" font-size="18" fill="#17324d">Input + aim</text><text x="854" y="247" font-size="18" fill="#17324d">Local prediction</text><text x="854" y="274" font-size="18" fill="#17324d">Remote interpolation</text>
+<text x="510" y="170" font-size="25" font-weight="bold" fill="#fff">MATCH SERVER</text><text x="510" y="211" font-size="19" fill="#d6f1f2">Tick ownership</text><text x="510" y="243" font-size="19" fill="#d6f1f2">Movement validation</text><text x="510" y="275" font-size="19" fill="#d6f1f2">Ball + collisions</text><text x="510" y="307" font-size="19" fill="#d6f1f2">Faults + scoring</text><text x="510" y="339" font-size="19" fill="#d6f1f2">Snapshots + events</text></g>
+<path d="M292 225H349M663 225H721" stroke="#41687f" stroke-width="4" fill="none" marker-end="url(#a)"/><path d="M356 260H301M728 260H671" stroke="#41687f" stroke-width="3" stroke-dasharray="7 7" fill="none" marker-end="url(#a)"/>
+<rect x="315" y="455" width="394" height="85" rx="17" fill="#ffe06b"/><text x="512" y="491" font-family="Arial" font-size="22" text-anchor="middle" font-weight="bold" fill="#17324d">Optional profile service</text><text x="512" y="520" font-family="Arial" font-size="16" text-anchor="middle" fill="#17324d">Accounts/cosmetics, not game authority</text>
+<path d="M510 396V447" stroke="#41687f" stroke-width="3" stroke-dasharray="7 7" fill="none"/>
+</svg>

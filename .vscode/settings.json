@@ -1,0 +1,6 @@
+{
+  "files.exclude": {
+    "**/.godot": true
+  },
+  "editor.tabSize": 4
+}
