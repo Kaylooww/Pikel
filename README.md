@@ -19,7 +19,7 @@
 |---|---|
 | Godot project and main menu | Starter implementation |
 | Court / kitchen / net geometry | Procedural prototype geometry |
-| Local player WASD and Shift | Starter implementation |
+| Local player WASD and Shift | Starter implementation, read through a rebindable input action map (26 unit checks). No settings screen; rebinds are not saved |
 | Cursor projected onto opposite half | Starter implementation |
 | Left-click drive, right-click soft hit | Starter implementation |
 | Ball flight, gravity, bounce | No drag or spin; exact parabola and exact landing point; needs tuning |

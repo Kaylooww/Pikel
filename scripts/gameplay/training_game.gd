@@ -99,19 +99,18 @@ func _process(_delta: float) -> void:
         bot.ai_direction = Vector3.ZERO
 
 func _unhandled_input(event: InputEvent) -> void:
-    if event is InputEventKey and event.pressed and not event.echo:
-        if event.keycode == KEY_R:
-            _reset_ball()
-            _set_status("New practice ball ready.")
-        elif event.keycode == KEY_C:
-            camera.next_rig()
-            _set_status("Camera view changed.")
-        elif event.keycode == KEY_ESCAPE:
-            get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
-    if event is InputEventMouseButton and event.pressed and not resetting:
-        if event.button_index == MOUSE_BUTTON_LEFT:
+    if event.is_action_pressed(GameInput.RESET_BALL):
+        _reset_ball()
+        _set_status("New practice ball ready.")
+    elif event.is_action_pressed(GameInput.CAMERA_NEXT):
+        camera.next_rig()
+        _set_status("Camera view changed.")
+    elif event.is_action_pressed(GameInput.MENU_BACK):
+        get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
+    elif not resetting:
+        if event.is_action_pressed(GameInput.SHOT_DRIVE):
             _attempt_hit(false)
-        elif event.button_index == MOUSE_BUTTON_RIGHT:
+        elif event.is_action_pressed(GameInput.SHOT_DINK):
             _attempt_hit(true)
 
 ## Shows what a click would do right now: the arc of each shot type that the solver accepts,
@@ -232,7 +231,11 @@ func _make_hud() -> void:
     shot_label.text = "LAST SHOT  —  none yet"
     stack.add_child(shot_label)
     var help := Label.new()
-    help.text = "WASD move | SHIFT sprint | Mouse aim | LEFT drive | RIGHT dink | R reset | C camera | ESC menu"
+    help.text = "%s/%s/%s/%s move | %s sprint | Mouse aim | %s drive | %s dink | %s reset | %s camera | %s menu" % [
+        GameInput.label(GameInput.MOVE_FORWARD), GameInput.label(GameInput.MOVE_LEFT), GameInput.label(GameInput.MOVE_BACK),
+        GameInput.label(GameInput.MOVE_RIGHT), GameInput.label(GameInput.SPRINT), GameInput.label(GameInput.SHOT_DRIVE),
+        GameInput.label(GameInput.SHOT_DINK), GameInput.label(GameInput.RESET_BALL), GameInput.label(GameInput.CAMERA_NEXT),
+        GameInput.label(GameInput.MENU_BACK)]
     stack.add_child(help)
     _update_score()
 

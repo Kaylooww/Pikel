@@ -16,6 +16,11 @@
 | Mouse wheel | Not implemented | Camera distance |
 | Controller | Not implemented | Post-beta accessibility / Steam Input |
 
+## Input actions (implemented)
+Controls are ten named actions in `project.godot` (Project Settings > Input Map): `move_left`, `move_right`, `move_forward`, `move_back`, `sprint`, `shot_drive`, `shot_dink`, `reset_ball`, `camera_next`, `menu_back`. Keys are bound by physical position, so WASD stays in the same place on non-QWERTY layouts. Gameplay scripts read these through `scripts/gameplay/game_input.gd` (`GameInput`) and never check raw keys.
+
+`GameInput.rebind(action, event)` replaces a binding, `GameInput.reset_to_defaults()` restores the project defaults, and `GameInput.label(action)` gives the key name the HUD hint line shows. There is no settings screen yet and rebinds are not saved between runs. Controller bindings can be added to the same actions later without touching gameplay code.
+
 ## How cursor aiming should work
 1. Convert `get_viewport().get_mouse_position()` through `Camera3D.project_ray_origin/normal`.
 2. Intersect the ray with the y≈0 court plane or a dedicated raycastable aim surface.

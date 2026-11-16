@@ -70,6 +70,15 @@
 - [x] Training scene, 120 headless frames — exit 0, no script errors.
 - [ ] Neither camera view has been seen on screen. The match view's numbers are a first guess.
 
+## RP-014 results recorded 2026-11-17 (same machine and Godot build)
+
+- [x] Headless import — exit 0, no errors or warnings printed.
+- [x] Unit tests: rules 7, net collision 11, court dimensions 29, gameplay tuning 15, shot solver 24, camera 18 — all pass.
+- [x] `test_input.gd` — `PASS: 26 input checks` (simulated events and action presses).
+- [x] `tests/integration/test_training_preview.gd` — `PASS: 15 training preview checks`.
+- [x] Training scene, 120 headless frames — exit 0, no script errors.
+- [ ] No real keyboard or mouse has been used against the new action map.
+
 Still not performed: F5 gameplay with a human, Windows export, MCP editor connection.
 
 Do not describe this project as a fully validated production game.
