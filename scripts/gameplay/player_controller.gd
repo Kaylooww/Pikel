@@ -18,12 +18,10 @@ func _physics_process(_delta: float) -> void:
     if controlled_by_ai:
         move = ai_direction
     else:
-        if Input.is_key_pressed(KEY_A): move.x -= 1.0
-        if Input.is_key_pressed(KEY_D): move.x += 1.0
-        if Input.is_key_pressed(KEY_W): move.z -= 1.0
-        if Input.is_key_pressed(KEY_S): move.z += 1.0
+        var input: Vector2 = GameInput.move_vector()
+        move = Vector3(input.x, 0.0, input.y)
     move = move.normalized()
-    var speed: float = tuning.sprint_speed if (not controlled_by_ai and Input.is_key_pressed(KEY_SHIFT)) else tuning.move_speed
+    var speed: float = tuning.sprint_speed if (not controlled_by_ai and Input.is_action_pressed(GameInput.SPRINT)) else tuning.move_speed
     velocity = move * speed
     move_and_slide()
     position.x = clampf(position.x, -tuning.max_side_distance, tuning.max_side_distance)
