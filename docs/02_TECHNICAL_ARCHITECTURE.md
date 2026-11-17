@@ -20,6 +20,22 @@ J --> L[court_dimensions.gd]
 K --> M[rules_engine.gd]
 ```
 
+### Match scenes (added with RP-025 and RP-030 to RP-033)
+```mermaid
+flowchart TD
+MM[main_menu.tscn] --> SM[singles_match.tscn]
+MM --> OM[online_match.tscn]
+SM --> MC[match_court.tscn: court, models, camera, aim aids, HUD, local input]
+OM --> MC
+SM --> SIM[MatchSimulation]
+SIM --> BS[BallState] & PM[PlayerMotion] & RC[RallyController + RallyState + MatchScore]
+BOT[PracticeBot] -->|PlayerInput| SIM
+OM --> CL[MatchClient: ClientPrediction + SnapshotInterpolator]
+CL <-->|NetLink RPCs, NetProtocol arrays| SV[MatchServer in match_server.tscn]
+SV --> SIM
+```
+`MatchSimulation` is the single implementation of a match: local play steps it directly, the server steps it as the only authority, and `MatchCourt` only displays. `PlayerMotion` and `BallState` are pure, so the visual nodes, the simulation and client prediction cannot drift apart. `MatchView` is what one side may know; the bot and the aim hints (`AimAdvice`) both work from it, whether it was built from the simulation or from a network snapshot. The practice scene (`training_game.gd`) still has its own older loop and has not been moved onto `MatchSimulation`.
+
 ## Target architecture
 ```mermaid
 flowchart TD
@@ -73,7 +89,8 @@ Use named `.tres` resources for move speeds, swing windows, camera offsets, targ
 ## Known technical debt in this scaffold
 - Net collision is swept (`scripts/physics/net_collision.gd`), but a hit only ends the rally: no net bounce and no separate post collider.
 - No spin, drag, timing quality, shot windows, stamina economy or strict kitchen detection yet.
-- Practice opponent is a trivial heuristic, not match AI.
+- The match bot (`PracticeBot`) is simple: no volleys, no tactics; the practice scene's opponent is an even simpler scripted return.
+- The practice scene duplicates logic that `MatchSimulation` now owns; fold it in when it next needs changing.
 - Rally phases, faults, serve and kitchen rules run through `RallyState`/`RallyController`, and singles scoring through `MatchScore`; no playable match scene, doubles, rollback or reconciliation yet.
 - Camera rigs assume the home half; an away-side player needs a mirrored rig. No occlusion handling, zoom or settings yet.
 - Procedural scene visuals are runtime-generated and not finished art.

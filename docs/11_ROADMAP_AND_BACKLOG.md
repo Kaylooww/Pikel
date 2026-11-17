@@ -38,13 +38,17 @@ Progress is tracked here: `[x]` done, `[ ]` open. `prompts/NEXT.md` picks the fi
 - [x] **RP-022 (P0):** Legal serves and proper diagonal service landing.
 - [x] **RP-023 (P0):** NVZ/volley/momentum logic.
 - [x] **RP-024 (P0):** Side-out score/rotation and match end condition.
-- [ ] **RP-025 (P1):** Full local singles with bot or second controller.
+- [x] **RP-025 (P1):** Full local singles with bot or second controller.
 
 ## Sprint 3: networking foundation
-- [ ] **RP-030 (P0):** Dedicated headless match server with fixed tick and match IDs.
+- [x] **RP-030 (P0):** Dedicated headless match server with fixed tick and match IDs. One match per server process.
 - [ ] **RP-031 (P0):** LAN join, ownership, validated inputs and snapshots.
+  - [x] Join by address, seats owned by connection, validated inputs, snapshots. Verified on localhost: in one process and as three separate processes.
+  - [ ] Human check: two real PCs on one LAN play a match (firewall prompt, real addresses). Needs two machines.
 - [ ] **RP-032 (P0):** Client prediction, opponent interpolation and reconciliation.
-- [ ] **RP-033 (P0):** Accurate authoritative hit and fault events.
+  - [x] Implemented and unit-tested with simulated latency, loss and bursts; exercised over localhost sockets.
+  - [ ] Human check: play with real or injected latency, jitter and loss and judge whether movement and the delayed opponent feel right. No network-condition simulator is wired into the game yet.
+- [x] **RP-033 (P0):** Accurate authoritative hit and fault events. The server decides every swing, fault and point; clients receive numbered reliable events.
 - [ ] **RP-034 (P1):** Timeout, reconnect and error states.
 - [ ] **RP-035 (P1):** Private match codes and public server deployment.
 

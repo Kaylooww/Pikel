@@ -1,6 +1,7 @@
 extends CharacterBody3D
 class_name PickleballPlayer
-## Prototype player controller: one local character plus one basic scripted practice opponent.
+## The player you see. In practice it moves itself from local input or a scripted direction;
+## in a match the simulation owns positions and this node's physics processing is switched off.
 @export var home_side: bool = true
 @export var controlled_by_ai: bool = false
 @export var tuning: GameplayTuning = preload("res://config/gameplay_tuning.tres")
@@ -13,21 +14,9 @@ func _ready() -> void:
     material.albedo_color = Color("ff846c") if home_side else Color("4dd4bd")
     body.material_override = material
 
-func _physics_process(_delta: float) -> void:
-    var move: Vector3 = Vector3.ZERO
-    if controlled_by_ai:
-        move = ai_direction
-    else:
-        var input: Vector2 = GameInput.move_vector()
-        move = Vector3(input.x, 0.0, input.y)
-    move = move.normalized()
-    var speed: float = tuning.sprint_speed if (not controlled_by_ai and Input.is_action_pressed(GameInput.SPRINT)) else tuning.move_speed
-    velocity = move * speed
-    move_and_slide()
-    position.x = clampf(position.x, -tuning.max_side_distance, tuning.max_side_distance)
-    if home_side:
-        position.z = clampf(position.z, tuning.min_net_distance, tuning.max_back_distance)
-    else:
-        position.z = clampf(position.z, -tuning.max_back_distance, -tuning.min_net_distance)
+func _physics_process(delta: float) -> void:
+    var move: Vector2 = Vector2(ai_direction.x, ai_direction.z) if controlled_by_ai else GameInput.move_vector()
+    var sprint: bool = not controlled_by_ai and Input.is_action_pressed(GameInput.SPRINT)
+    position = PlayerMotion.step(position, move, sprint, 1 if home_side else -1, tuning, delta)
     if move.length_squared() > 0.01:
-        facing_direction = move
+        facing_direction = Vector3(move.x, 0.0, move.y)

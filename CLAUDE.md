@@ -4,7 +4,7 @@ Read `AGENTS.md` first. Then read `README.md`, `docs/02_TECHNICAL_ARCHITECTURE.m
 
 - Godot **4.7.2** (GDScript) is pinned for this starting branch.
 - Root contains an importable `project.godot`; don't recreate the project or change engine without approval.
-- A vertical-slice **practice prototype** is present; no complete scoring, legal serve state machine, real multiplayer or ranked system exists yet.
+- Present: practice court, a rules-complete singles match against a bot, and a LAN 1v1 slice with a dedicated authoritative server. Not present: doubles, internet play, accounts, reconnect, ranked, real art. The README truth table is the source of truth.
 - Reference PNGs in `references/concept_art/` are art direction only, not licensed third-party screenshots or production models.
 - Physics/gameplay correctness takes priority over visual polish. Incrementally replace approximations with tested systems.
 - Ensure new scenes/scripts follow naming and module boundaries.

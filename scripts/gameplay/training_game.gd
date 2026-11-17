@@ -78,7 +78,7 @@ func _ready() -> void:
     dink_preview = TrajectoryPreview.new()
     dink_preview.set_color(Color("55d5cb"))
     add_child(dink_preview)
-    _make_environment()
+    CourtScenery.add_environment(self)
     _make_hud()
     _set_status("Aim on the OPPOSITE court; click while the ball is within reach.")
 
@@ -91,14 +91,8 @@ func _physics_process(_delta: float) -> void:
         in_kitchen[who] = inside
 
 func _process(_delta: float) -> void:
-    var origin: Vector3 = camera.project_ray_origin(get_viewport().get_mouse_position())
-    var direction: Vector3 = camera.project_ray_normal(get_viewport().get_mouse_position())
-    if absf(direction.y) > 0.001:
-        var distance: float = (0.03 - origin.y) / direction.y
-        if distance > 0.0:
-            var world: Vector3 = origin + direction * distance
-            target_position = Vector3(clampf(world.x, -CourtDimensions.HALF_WIDTH + 0.16, CourtDimensions.HALF_WIDTH - 0.16), 0.0, clampf(world.z, -CourtDimensions.HALF_LENGTH + 0.14, -0.20))
-            marker.position = Vector3(target_position.x, 0.10, target_position.z)
+    target_position = CourtAim.target_from_mouse(camera, get_viewport().get_mouse_position(), 1, target_position)
+    marker.position = Vector3(target_position.x, 0.10, target_position.z)
     _update_aim_preview()
     if ball.moving and not resetting:
         var want: Vector3 = Vector3(clampf(ball.position.x, -2.9, 2.9), 0, -4.8)
@@ -247,28 +241,13 @@ func _on_ball_net_hit(contact: Vector3) -> void:
 func _on_rally_ended(rally: RallyState) -> void:
     ball.stop()
     bot_should_return = false
-    _set_status(_fault_text(rally))
+    _set_status(RallyText.fault(rally, 1))
     if resetting:
         return
     resetting = true
     await get_tree().create_timer(tuning.fault_reset_delay).timeout
     if is_inside_tree():
         _reset_ball()
-
-func _fault_text(rally: RallyState) -> String:
-    var what: String
-    match rally.fault:
-        RallyState.Fault.NET: what = "NET"
-        RallyState.Fault.OUT: what = "OUT"
-        RallyState.Fault.OWN_SIDE: what = "DID NOT CROSS THE NET"
-        RallyState.Fault.DOUBLE_BOUNCE: what = "DOUBLE BOUNCE"
-        RallyState.Fault.VOLLEY_BEFORE_BOUNCE: what = "TWO-BOUNCE RULE — the ball had to bounce first"
-        RallyState.Fault.KITCHEN_VOLLEY: what = "KITCHEN FAULT — no volleys while standing in the kitchen"
-        RallyState.Fault.KITCHEN_MOMENTUM: what = "KITCHEN FAULT — momentum carried into the kitchen after a volley"
-        RallyState.Fault.SERVE_POSITION: what = "FOOT FAULT — serve from behind the baseline, right half"
-        RallyState.Fault.SERVE_COURT: what = "SERVICE FAULT — serve must land in the diagonal service court"
-        _: what = "DOUBLE HIT"
-    return "%s  —  %s" % [what, "you win the rally" if rally.winner_side == 1 else "opponent wins the rally"]
 
 ## New practice ball: the player is put on the serve spot with the ball in hand.
 ## Their first hit is the serve. shortcut: always the right court until scoring picks the side (RP-024).
@@ -279,21 +258,6 @@ func _reset_ball() -> void:
     awaiting_landing = false
     bot_should_return = false
     resetting = false
-
-func _make_environment() -> void:
-    var env := WorldEnvironment.new()
-    var world := Environment.new()
-    world.background_mode = Environment.BG_COLOR
-    world.background_color = Color("bde8f1")
-    world.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    world.ambient_light_color = Color("ffffff")
-    world.ambient_light_energy = 0.8
-    env.environment = world
-    add_child(env)
-    var sun := DirectionalLight3D.new()
-    sun.rotation_degrees = Vector3(-55.0, -24.0, 0.0)
-    sun.light_energy = 1.15
-    add_child(sun)
 
 func _make_hud() -> void:
     var hud := CanvasLayer.new()

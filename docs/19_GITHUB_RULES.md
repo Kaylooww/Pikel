@@ -55,7 +55,7 @@ One branch is open at a time. A new branch is never stacked on an unmerged one.
    ```powershell
    ./tools/validate_project.ps1
    ```
-   A commit that touches physics, rules, match state, networking or serialization must include or update a test.
+   It imports the project and runs every test in `tests/unit` and `tests/integration` (about 40 seconds). A commit that touches physics, rules, match state, networking or serialization must include or update a test. For networking, the match simulation or the bot, also run `./tools/lan_smoke_test.ps1` (about a minute).
 4. **No secrets or PII:** no API keys, tokens, `.env` files or player data in code, scenes, Markdown or history.
 5. **No third-party copyrighted assets**, screenshots or code from reference games.
 6. **Do not commit generated or local files:** `.godot/`, `builds/`, `logs/`, `.claude/settings.local.json`. These are already in `.gitignore`; do not force-add them.

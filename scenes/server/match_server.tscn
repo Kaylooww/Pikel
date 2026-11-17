@@ -1,0 +1,14 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/networking/server_main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/networking/net_link.gd" id="2_link"]
+[ext_resource type="Script" path="res://scripts/networking/match_server.gd" id="3_server"]
+
+[node name="NetGame" type="Node"]
+script = ExtResource("1_main")
+
+[node name="NetLink" type="Node" parent="."]
+script = ExtResource("2_link")
+
+[node name="MatchServer" type="Node" parent="."]
+script = ExtResource("3_server")
