@@ -10,6 +10,7 @@ signal event(type: NetProtocol.EventType, payload: Array)
 signal failed(reason: String) ## could not connect, or the server went away
 
 enum Status { OFFLINE, CONNECTING, WAITING_FOR_MATCH, PLAYING }
+const CONNECT_TIMEOUT_TICKS: int = 480 ## give up after 8 seconds; ENet alone would keep trying for about 30
 
 @export var tuning: GameplayTuning = preload("res://config/gameplay_tuning.tres")
 var link: NetLink ## set by the owner before join()
@@ -25,6 +26,7 @@ var snapshots_received: int = 0
 var snapshots_ignored: int = 0 ## malformed, for another match, or not newer than the newest
 var _seq: int = 0
 var _last_event_id: int = 0
+var _connecting_ticks: int = 0
 
 func join(host: String, port: int) -> Error:
     var peer := ENetMultiplayerPeer.new()
@@ -65,6 +67,11 @@ func send(input: PlayerInput) -> void:
 
 ## Call once per physics tick.
 func tick() -> void:
+    if status == Status.CONNECTING:
+        _connecting_ticks += 1
+        if _connecting_ticks > CONNECT_TIMEOUT_TICKS:
+            leave()
+            failed.emit("No server answered at that address.")
     interpolator.advance()
     if prediction != null:
         prediction.decay(MatchSimulation.DT)
@@ -90,6 +97,8 @@ func _on_connected() -> void:
     link.hello.rpc_id(1, NetProtocol.VERSION)
 
 func _on_lost(reason: String) -> void:
+    if status == Status.OFFLINE:
+        return # we closed the connection ourselves and already said why
     status = Status.OFFLINE
     failed.emit(reason)
 
