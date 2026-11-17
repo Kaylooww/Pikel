@@ -1,12 +1,14 @@
 extends SceneTree
 ## Run with: godot --headless --path . --script res://tests/unit/test_match_server.gd
 ## The match server's rules about who may do what, driven directly with no sockets:
-## seats, ownership, input validation, the speed limit, events and match ids (RP-030, RP-031, RP-033).
+## seats, ownership, input validation, the speed limit, events and match ids (RP-030, RP-031, RP-033),
+## kept seats, seat tickets and the serve clock (RP-034).
 const E := NetProtocol.EventType
 const DRIVE := PlayerInput.Swing.DRIVE
 const ALICE: int = 1001 # peer ids
 const BOB: int = 1002
 const CAROL: int = 1003
+const DAVE: int = 1004
 var errors: Array[String] = []
 var checks: int = 0
 var tuning := GameplayTuning.new()
@@ -136,11 +138,34 @@ func _initialize() -> void:
         increasing = increasing and ids[i] > ids[i - 1]
     _assert(increasing, "event ids only ever increase")
 
-    # A player leaving ends the match; the next pair gets a new match id.
+    # A player dropping mid-match: the seat is kept and the match stands still.
+    var bob_ticket: String = fresh._tokens[-1]
+    var frozen_tick: int = sim.tick
     fresh.on_peer_disconnected(BOB)
-    _assert(fresh.sim == null and fresh.seats == {ALICE: 1} and fresh.events_sent[-1][2] == E.MATCH_ABORTED, "a player leaving aborts the match and tells the other")
+    _assert(fresh.sim == sim and fresh.seats == {ALICE: 1} and fresh.events_sent[-1].slice(2) == [int(E.OPPONENT_AWAY), MatchServer.RECONNECT_SECONDS], "a player dropping mid-match keeps the match, and the other is told how long it will wait")
+    for i in range(100):
+        fresh.tick()
+    _assert(sim.tick == frozen_tick, "the match stands still while a seat is being kept")
     fresh.on_hello(CAROL, NetProtocol.VERSION)
-    _assert(fresh.sim != null and fresh.seats[CAROL] == -1 and fresh.match_id == id + 1, "a new opponent starts a new match with a new id")
+    fresh.on_hello(CAROL, NetProtocol.VERSION, "not-the-ticket")
+    _assert(not fresh.seats.has(CAROL), "nobody else can take a kept seat, with no ticket or with a wrong one")
+    fresh.on_hello(DAVE, NetProtocol.VERSION, bob_ticket)
+    _assert(fresh.seats == {ALICE: 1, DAVE: -1} and fresh.match_id == id and fresh.events_sent[-1][2] == E.OPPONENT_BACK, "the dropped player's new connection gets the seat back with its ticket, in the same match")
+    fresh.tick()
+    _assert(sim.tick == frozen_tick + 1, "play goes on once they are back")
+    # A client can notice a dead link before the server does: the ticket also replaces a connection the server still believes in.
+    fresh.on_hello(BOB, NetProtocol.VERSION, bob_ticket)
+    _assert(fresh.seats == {ALICE: 1, BOB: -1} and fresh.sim == sim and fresh._held.is_empty(), "a ticket replaces that player's stale connection without pausing")
+    fresh.on_peer_disconnected(DAVE)
+    _assert(fresh.seats == {ALICE: 1, BOB: -1} and fresh._held.is_empty(), "the stale connection closing afterwards changes nothing")
+
+    # Nobody comes back: the match is aborted, and the next pair gets a new match id.
+    fresh.on_peer_disconnected(BOB)
+    for i in range(MatchServer.RECONNECT_TICKS + 1):
+        fresh.tick()
+    _assert(fresh.sim == null and fresh.seats == {ALICE: 1} and fresh.events_sent[-1][2] == E.MATCH_ABORTED, "when the time is up the match is aborted and the other player is told")
+    fresh.on_hello(DAVE, NetProtocol.VERSION, bob_ticket)
+    _assert(fresh.sim != null and fresh.seats[DAVE] == -1 and fresh.match_id == id + 1 and fresh._tokens[-1] != bob_ticket, "an expired ticket is just a new player: new match, new id, new ticket")
     rejected = fresh.rejected_inputs
     fresh.on_input(ALICE, NetProtocol.encode_input(id, PlayerInput.make(Vector2(1, 0), false, PlayerInput.Swing.NONE, Vector3.ZERO, 50)))
     _assert(fresh.rejected_inputs == rejected + 1, "input still addressed to the old match is rejected")
@@ -171,7 +196,15 @@ func _initialize() -> void:
         solo.tick()
     _assert(solo.sim != null and not solo.sim.is_over() and solo.match_id == first_id + 1 and solo.sim.tick < 5, "ten seconds later a rematch starts with a new match id")
 
-    for node: MatchServer in [server, fresh, solo]:
+    # Serve clock: an idle server cannot stall the match.
+    var idle: MatchServer = _server()
+    idle.on_hello(ALICE, NetProtocol.VERSION)
+    idle.on_hello(BOB, NetProtocol.VERSION)
+    for i in range(MatchServer.SERVE_CLOCK_TICKS):
+        idle.tick()
+    _assert(idle.events_sent[-1][2] == E.RALLY_ENDED and idle.events_sent[-1].slice(4, 7) == [int(RallyState.Fault.SERVE_CLOCK), 1, -1], "a server who does not serve in 15 seconds loses the rally")
+
+    for node: MatchServer in [server, fresh, solo, idle]:
         node.free()
     if errors.is_empty():
         print("PASS: %d match server checks" % checks)

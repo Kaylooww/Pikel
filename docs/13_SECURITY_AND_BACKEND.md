@@ -12,9 +12,11 @@ Implemented in `scripts/networking/match_server.gd` and `net_protocol.gd`, with 
 - Movement speed is capped twice: the move vector is cut to length 1, and at most one input per tick on average is applied (a burst of four to catch up after jitter).
 - Reach, timing, net clearance, in/out, serve, kitchen and score are all decided by the server's simulation.
 - Server-to-client messages use Godot's `authority` RPC mode, and client-to-client relay is switched off.
-- Two seats only; a wrong protocol version, a third player, or a connection that never says hello is disconnected.
+- Two seats only; a wrong protocol version or a third player is told why (`refused`) and disconnected, and a connection that never says hello is dropped after 5 s.
+- A dropped player's seat is kept for 20 s and given back only to a connection that shows that seat's ticket: 8 random bytes from `Crypto`, sent in that player's `welcome`. A wrong or expired ticket is treated as a new player.
+- An idle server loses the rally after 15 s (serve clock), so nobody can stall a match by not serving.
 
-Not there yet: no accounts, session tokens or encryption (ENet traffic is plain), no admin interface, no per-address rate limiting or ban list, no serve clock (an idle server-side player can stall a match), no protection against a flood of new connections beyond the four-connection cap. Treat it as a trusted-LAN tool and do not expose the port to the internet.
+Not there yet: no accounts or encryption (ENet traffic is plain, so anyone on the network path can read a seat ticket and take that seat while it is kept), no admin interface, no per-address rate limiting or ban list, no protection against a flood of new connections beyond the four-connection cap. Treat it as a trusted-LAN tool and do not expose the port to the internet.
 
 ## Server security model
 - Client is untrusted for movement, contact, score, currency, rank and match result.

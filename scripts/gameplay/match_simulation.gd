@@ -39,6 +39,8 @@ var positions: Dictionary = {1: Vector3.ZERO, -1: Vector3.ZERO} ## side -> feet 
 var ball := BallState.new()
 var referee := RallyController.new()
 var pause_ticks: int = 0 ## ticks left before the next rally is set up
+var serve_clock_ticks: int = 0 ## a server who waits this long loses the rally; 0 = no clock (local play)
+var _serve_wait: int = 0
 var _in_kitchen: Dictionary = {1: false, -1: false}
 
 func _init(game_tuning: GameplayTuning, first_server: int = 1, points_to_win: int = 11, win_by: int = 2, point_cap: int = 0) -> void:
@@ -92,6 +94,10 @@ func advance() -> void:
     var rally: RallyState = referee.rally
     if rally.phase == RallyState.Phase.WAITING_FOR_SERVE:
         ball.place(_hand_position(rally.server_side)) # the server carries the ball until they hit it
+        _serve_wait += 1
+        if serve_clock_ticks > 0 and _serve_wait >= serve_clock_ticks:
+            referee.serve_timeout()
+            return
     match ball.step(DT, tuning):
         BallState.Event.BOUNCE:
             ball_bounced.emit(ball.position)
@@ -119,6 +125,7 @@ func _place_for_serve() -> void:
     positions[rally.server_side] = serve_spot(rally.server_side, rally.serve_from_right)
     positions[-rally.server_side] = receive_spot(rally.server_side, rally.serve_from_right)
     ball.place(_hand_position(rally.server_side))
+    _serve_wait = 0
     for side: int in SIDES:
         _in_kitchen[side] = false
     rally_started.emit(rally)

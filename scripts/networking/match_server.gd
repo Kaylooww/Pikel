@@ -5,14 +5,18 @@ class_name MatchServer
 ## and score. Clients send input requests; it sends back snapshots and events.
 ##
 ## What it will not accept from a client:
-##   - anything before a correct `hello` (wrong protocol version is disconnected)
+##   - anything before a correct `hello` (wrong protocol version is told why and disconnected)
 ##   - a third player (seats are home and away only)
+##   - a seat that is not theirs: a dropped player gets their seat back only with the ticket from their welcome
 ##   - input for a side the sender does not own: the side comes from who sent it, never from the message
 ##   - malformed input, input for another match, or old/repeated sequence numbers
 ##   - more than one input per tick on average (a short burst is allowed to catch up after jitter)
 ##
-## shortcut: one match per server process, no accounts, no reconnect, no serve clock. Those
-## are RP-034/RP-035. Run it on a trusted LAN only.
+## A player who drops mid-match keeps their seat for RECONNECT_SECONDS while the match stands
+## still; a server who will not serve loses the rally after SERVE_CLOCK_TICKS.
+##
+## shortcut: one match per server process, no accounts, plain unencrypted traffic (so a seat
+## ticket can be read off the wire). Run it on a trusted LAN only; upgrade before public play (RP-035).
 
 signal match_started(id: int)
 signal match_finished(score: MatchScore)
@@ -23,6 +27,10 @@ const HELLO_TIMEOUT_TICKS: int = 300 ## a connection that has not said hello aft
 const REMATCH_DELAY_TICKS: int = 600 ## after a match, the same players start again 10 s later
 const MAX_CONNECTIONS: int = 4 ## two players plus room to turn extra connections away politely
 const REFUSAL_GAP_TICKS: int = 15 ## at most one "your swing missed" message per player per quarter second
+const RECONNECT_SECONDS: int = 20 ## how long a dropped player's seat is kept while the match waits
+const RECONNECT_TICKS: int = RECONNECT_SECONDS * MatchSimulation.TICK_RATE
+const SERVE_CLOCK_TICKS: int = 900 ## a server who has not served after 15 s loses the rally
+const REFUSAL_FLUSH_TICKS: int = 30 ## a refused connection is closed half a second later, so the reason arrives first
 
 @export var port: int = NetProtocol.DEFAULT_PORT
 @export var points_to_win: int = 11
@@ -48,6 +56,8 @@ var _silent: Dictionary = {} ## peer id -> ticks connected without a hello
 var _next_event_id: int = 0
 var _rematch_wait: int = 0
 var _last_refusal: Dictionary = {1: -1000, -1: -1000} ## side -> tick of the last refused-swing message
+var _tokens: Dictionary = {} ## side -> seat ticket: the secret that proves a new connection is that same player
+var _held: Dictionary = {} ## side -> ticks left for a dropped player to come back; the match is paused while not empty
 
 func listen() -> Error:
     var peer := ENetMultiplayerPeer.new()
@@ -71,25 +81,63 @@ func _exit_tree() -> void:
 
 func on_peer_connected(peer_id: int) -> void:
     _silent[peer_id] = 0
+    if is_inside_tree():
+        NetProtocol.set_timeouts(multiplayer.multiplayer_peer, peer_id)
 
 func on_peer_disconnected(peer_id: int) -> void:
     _silent.erase(peer_id)
-    if seats.has(peer_id):
-        seats.erase(peer_id)
-        if sim != null:
-            _send_event(NetProtocol.EventType.MATCH_ABORTED, ["A player left the match."])
-            sim = null
+    if not seats.has(peer_id):
+        return
+    var side: int = seats[peer_id]
+    seats.erase(peer_id)
+    if sim != null and not sim.is_over():
+        # Mid-match: keep the seat and stop the clock, in case it was only the network.
+        _held[side] = RECONNECT_TICKS
+        _send_event(NetProtocol.EventType.OPPONENT_AWAY, [RECONNECT_SECONDS])
+        return
+    _tokens.erase(side)
+    if sim != null:
+        _abort("A player left the match.")
 
-func on_hello(peer_id: int, version: int) -> void:
+## `token` is "" for a new player, or the seat ticket a returning player was given.
+func on_hello(peer_id: int, version: int, token: String = "") -> void:
     if seats.has(peer_id):
         return
+    if version != NetProtocol.VERSION:
+        _refuse(peer_id, NetProtocol.Refusal.VERSION)
+        return
+    var returning: Variant = _tokens.find_key(token) if token != "" else null
+    if returning != null:
+        _reseat(peer_id, returning)
+        return
     var side: int = _free_side()
-    if version != NetProtocol.VERSION or side == 0:
-        _kick(peer_id)
+    if side == 0:
+        _refuse(peer_id, NetProtocol.Refusal.FULL)
         return
     _silent.erase(peer_id)
     seats[peer_id] = side
+    _tokens[side] = Crypto.new().generate_random_bytes(8).hex_encode()
     _start_if_ready()
+
+## The ticket proves this connection is the player who had `side`, so it replaces whatever
+## is left of their old connection (the client can notice a dead link before the server does).
+func _reseat(peer_id: int, side: int) -> void:
+    var old: Variant = seats.find_key(side)
+    if old != null:
+        seats.erase(old)
+        _kick(old)
+    var was_held: bool = _held.erase(side)
+    _silent.erase(peer_id)
+    seats[peer_id] = side
+    (_queues[side] as Array).clear()
+    if sim == null:
+        return
+    _welcome(peer_id)
+    if was_held:
+        _send_event(NetProtocol.EventType.OPPONENT_BACK, [], -side)
+    if not _held.is_empty():
+        _send_event(NetProtocol.EventType.OPPONENT_AWAY, [RECONNECT_SECONDS], side) # the other player is still missing
+    _send_snapshots()
 
 func on_input(peer_id: int, data: Variant) -> void:
     if sim == null or not seats.has(peer_id):
@@ -116,6 +164,14 @@ func tick() -> void:
             _kick(peer_id)
     if sim == null:
         return
+    if not _held.is_empty():
+        # Paused: nothing moves until the missing player is back or their time is up.
+        for side: int in _held.keys():
+            _held[side] -= 1
+            if _held[side] <= 0:
+                _abort("The other player did not come back.")
+                break
+        return
     if sim.is_over():
         _rematch_wait -= 1
         if _rematch_wait <= 0:
@@ -141,15 +197,34 @@ func tick() -> void:
 
 func _free_side() -> int:
     for side: int in MatchSimulation.SIDES:
-        if side != bot_side and not seats.values().has(side):
+        if side != bot_side and not seats.values().has(side) and not _held.has(side):
             return side
     return 0
+
+## Ends the match for everyone still here and gives up any seats being kept.
+func _abort(reason: String) -> void:
+    _send_event(NetProtocol.EventType.MATCH_ABORTED, [reason])
+    sim = null
+    for side: int in _held:
+        _tokens.erase(side)
+    _held.clear()
+
+## Tells a connection why it gets no seat, then lets the silent-connection timer close it.
+func _refuse(peer_id: int, reason: NetProtocol.Refusal) -> void:
+    if link != null:
+        link.refused.rpc_id(peer_id, int(reason))
+    _silent[peer_id] = HELLO_TIMEOUT_TICKS - REFUSAL_FLUSH_TICKS
+
+func _welcome(peer_id: int) -> void:
+    if link != null:
+        link.welcome.rpc_id(peer_id, NetProtocol.encode_welcome(match_id, seats[peer_id], points_to_win, win_by, _tokens[seats[peer_id]]))
 
 func _start_if_ready() -> void:
     if sim != null or seats.is_empty() or (seats.size() < 2 and not fill_with_bot):
         return
     match_id = match_id + 1 if match_id != 0 else randi_range(1000, 999999)
     sim = MatchSimulation.new(tuning, 1, points_to_win, win_by)
+    sim.serve_clock_ticks = SERVE_CLOCK_TICKS
     sim.rally_started.connect(_on_rally_started)
     sim.swing_resolved.connect(_on_swing_resolved)
     sim.rally_ended.connect(_on_rally_ended)
@@ -166,9 +241,8 @@ func _start_if_ready() -> void:
         _last_refusal[side] = -1000
         _last_seq[side] = 0
         _acked[side] = 0
-    if link != null:
-        for peer_id: int in seats:
-            link.welcome.rpc_id(peer_id, NetProtocol.encode_welcome(match_id, seats[peer_id], points_to_win, win_by))
+    for peer_id: int in seats:
+        _welcome(peer_id)
     match_started.emit(match_id)
     _on_rally_started(sim.referee.rally) # the first rally began inside the constructor, before anyone could listen
     _send_snapshots()

@@ -47,6 +47,10 @@ func bounce(at: Vector3) -> bool:
 func net(at: Vector3) -> bool:
     return _apply(RallyEvent.net(_take_id(), rally.rally_id, _now(), at))
 
+## The server ran out of time to serve. Ignored once the serve has been hit.
+func serve_timeout() -> bool:
+    return _apply(RallyEvent.serve_timeout(_take_id(), rally.rally_id, _now()))
+
 func _now() -> int:
     return tick if tick >= 0 else Engine.get_physics_frames()
 

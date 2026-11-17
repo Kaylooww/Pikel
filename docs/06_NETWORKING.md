@@ -67,11 +67,19 @@ Stages N0 and N1 above are built; N2 exists only as unit tests with simulated co
 ### Messages
 | Direction | Message | Delivery | Content |
 |---|---|---|---|
-| client to server | `hello` | reliable | protocol version |
+| client to server | `hello` | reliable | protocol version, seat ticket ("" for a new player) |
 | client to server | `submit_input` | unreliable, ordered | match id, sequence number, move vector, sprint, swing type, aim point |
-| server to client | `welcome` | reliable | protocol version, match id, your side, tick rate, points to win, win by |
+| server to client | `welcome` | reliable | protocol version (2), match id, your side, tick rate, points to win, win by, your seat ticket |
+| server to client | `refused` | reliable | why you get no seat: other version, or server full; the connection is closed half a second later |
 | server to client | `snapshot` | unreliable, ordered, every 2 ticks | match id, server tick, last input applied for you, both positions, ball position and velocity, score, server, rally id and phase |
-| server to client | `game_event` | reliable | numbered: rally started, swing result, rally ended (fault, who, winner, score), match ended, match aborted |
+| server to client | `game_event` | reliable | numbered: rally started, swing result, rally ended (fault, who, winner, score), match ended, match aborted, opponent away (seconds the match waits), opponent back |
+
+### Timeouts and reconnect (RP-034)
+- ENet timeouts are set to notice a silent peer in 3 to 6 s on both ends.
+- When a seated player drops mid-match, the server keeps their seat for 20 s and the whole match stands still; the other player is told. If nobody shows that seat's ticket in time, the match is aborted and the other player waits for a new opponent.
+- The client, on losing a seated connection, retries every 2 s for 20 s, sending its ticket. Back in the same match it says so and carries on; otherwise it reports the loss and offers the menu.
+- A ticket also replaces a connection the server still thinks is alive, because the client can notice a dead link first.
+- Serve clock: a server who has not served after 15 s loses the rally (fault `SERVE_CLOCK`). Off in local play.
 
 A swing is a request. The server judges reach and timing from its own state, solves the shot, and announces the result. A refused swing is reported only to the player who swung, at most once per quarter second.
 
@@ -86,12 +94,12 @@ Its own player: predicted immediately, corrected on each snapshot by replaying u
 
 ### Verified, and how
 - Unit tests without sockets: protocol (34 checks), server authority and limits (32), prediction and interpolation under simulated latency, loss and bursts (32).
-- `tests/integration/test_lan_match.gd`: server and two clients over UDP on localhost in one process; bots play a match; both clients must agree with the server on every rally and the final score; a third client and malformed input are turned away (27 checks).
+- `tests/integration/test_lan_match.gd`: server and two clients over UDP on localhost in one process; bots play a match; both clients must agree with the server on every rally and the final score; a third client is told the server is full; malformed input is turned away; after the rematch starts, a client's link is cut, the server keeps the seat, and the client reconnects into the same match (33 checks).
 - `tools/lan_smoke_test`: the same as three separate processes. Run on 2026-11-17: both scripts passed, with the server and both clients reporting the same final score and zero rejected inputs.
 
 ### Known limits
 - One match per server process; no lobby codes, no spectators, singles only.
-- No reconnect: a dropped player ends the match. No serve clock, so an idle server-side player stalls it (RP-034).
+- Reconnect works only while the same server process is running; a restarted server has forgotten every seat. A dead link cannot be produced on localhost, so the socket test cuts it by closing the client's socket.
 - No accounts, tokens or encryption. Trusted LAN only (see `docs/13_SECURITY_AND_BACKEND.md`).
 - Inputs are sent once each, unreliably; a lost input costs one tick of movement and a small correction. No redundancy yet.
 - The ball is interpolated, not predicted, so your own hit appears to leave the paddle one round trip plus about 67 ms late.

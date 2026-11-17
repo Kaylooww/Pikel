@@ -15,6 +15,7 @@ func _ready() -> void:
     client.joined.connect(_on_joined)
     client.event.connect(_on_event)
     client.failed.connect(_on_failed)
+    client.notice.connect(_on_notice)
     court.show_score("ONLINE MATCH")
     court.show_status("Connecting to %s:%d …" % [NetConfig.host, NetConfig.port])
     var error: Error = client.join(NetConfig.host, NetConfig.port)
@@ -60,6 +61,14 @@ func _on_event(type: NetProtocol.EventType, payload: Array) -> void:
             _quit_if_automated(0)
         NetProtocol.EventType.MATCH_ABORTED:
             court.show_status("%s Waiting for a new opponent …" % payload[0])
+        NetProtocol.EventType.OPPONENT_AWAY:
+            _on_notice("Opponent disconnected. The match waits up to %d seconds for them to come back …" % payload[0])
+        NetProtocol.EventType.OPPONENT_BACK:
+            _on_notice("Opponent is back. Play on.")
+
+func _on_notice(text: String) -> void:
+    court.show_status(text)
+    print("CLIENT NOTICE: ", text)
 
 func _on_failed(reason: String) -> void:
     court.show_status("%s Press %s for the menu." % [reason, GameInput.label(GameInput.MENU_BACK)])

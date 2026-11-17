@@ -6,20 +6,21 @@ class_name NetLink
 ##
 ## Direction is enforced here and by the RPC modes:
 ##   client -> server: hello, submit_input. Ignored unless this peer is the server.
-##   server -> client: welcome, snapshot, game_event. "authority" mode means Godot itself
+##   server -> client: welcome, snapshot, game_event, refused. "authority" mode means Godot itself
 ##     rejects them from anyone but the server, so a client cannot fake them.
 ## Payloads are plain Arrays; NetProtocol builds and checks them.
 
-signal hello_received(peer_id: int, version: int)
+signal hello_received(peer_id: int, version: int, token: String)
 signal input_received(peer_id: int, data: Array)
 signal welcome_received(data: Array)
 signal snapshot_received(data: Array)
 signal event_received(data: Array)
+signal refused_received(reason: int)
 
 @rpc("any_peer", "call_remote", "reliable")
-func hello(version: int) -> void:
+func hello(version: int, token: String) -> void: ## token: "" for a new player, or the seat ticket from an earlier welcome
     if multiplayer.is_server():
-        hello_received.emit(multiplayer.get_remote_sender_id(), version)
+        hello_received.emit(multiplayer.get_remote_sender_id(), version, token)
 
 ## Unreliable on purpose: a late input is useless, and the next one is already on its way.
 @rpc("any_peer", "call_remote", "unreliable_ordered")
@@ -34,6 +35,11 @@ func welcome(data: Array) -> void:
 @rpc("authority", "call_remote", "unreliable_ordered")
 func snapshot(data: Array) -> void:
     snapshot_received.emit(data)
+
+## Sent just before the server closes a connection it will not seat (a NetProtocol.Refusal).
+@rpc("authority", "call_remote", "reliable")
+func refused(reason: int) -> void:
+    refused_received.emit(reason)
 
 ## Things that must not be lost: swing results, rally results, match start and end.
 @rpc("authority", "call_remote", "reliable")
