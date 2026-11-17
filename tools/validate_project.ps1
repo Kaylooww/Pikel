@@ -29,4 +29,6 @@ if ($LASTEXITCODE -ne 0) { throw "Godot rally controller checks failed: $LASTEXI
 if ($LASTEXITCODE -ne 0) { throw "Godot training rally checks failed: $LASTEXITCODE" }
 & $Godot --headless --path . --script res://tests/unit/test_match_score.gd
 if ($LASTEXITCODE -ne 0) { throw "Godot match score checks failed: $LASTEXITCODE" }
+& $Godot --headless --path . --script res://tests/unit/test_motion.gd
+if ($LASTEXITCODE -ne 0) { throw "Godot motion checks failed: $LASTEXITCODE" }
 Write-Host "Basic Godot checks passed. Manual F6/F5 gameplay playtesting is still required."
