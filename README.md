@@ -13,6 +13,15 @@
 5. Use **WASD** to move, **Shift** to sprint, move the **mouse** to aim, **left click** for a drive, **right click** for a softer dink, **R** to reset, **C** to switch camera view, and **Esc** for the menu.
 6. Read **[SETUP_WINDOWS_GODOT_CLAUDE.md](SETUP_WINDOWS_GODOT_CLAUDE.md)** and paste **[prompts/MASTER_STARTING_PROMPT.md](prompts/MASTER_STARTING_PROMPT.md)** into Claude Code from this project folder.
 
+## Play on a LAN (two PCs on the same network)
+
+1. On one PC, open PowerShell in the project folder and run `./tools/run_server.ps1`. Leave it open. The first time, Windows asks whether to allow Godot through the firewall: allow it on **Private** networks only.
+2. Find that PC's address with `ipconfig` (the IPv4 address, for example `192.168.1.20`).
+3. On both PCs, start the game, type `192.168.1.20:7777` (your address) next to **JOIN LAN MATCH** and press it. The first to join plays from the near end; the match starts when the second joins.
+4. To try it alone, run `./tools/run_server.ps1 -Bot` and join `127.0.0.1:7777`: a bot takes the other seat.
+
+This is a trusted-LAN prototype: there are no accounts or passwords, so do not expose the port to the internet.
+
 ## Current implementation — truth table
 
 | Feature | Status |
@@ -37,7 +46,8 @@
 | Kitchen rules | Volleying while standing in the kitchen (line included) is a fault, and so is stepping in within 0.6 s after a volley; standing there and hitting bounced balls is allowed; the preview warns. Players are a single ground point, not two feet |
 | Scoring | `MatchScore`: singles side-out scoring, serve side from the server's score, win at 11 by 2 with optional cap; `RallyController` scores each rally once and picks the next server; 24 unit checks plus 11 controller checks. **Not shown in the playable scene yet**: practice still has the player serve every ball |
 | Playable singles match vs bot | `scenes/game/singles_match.tscn`, from the main menu: side-out scoring to 11 by 2, the bot serves and returns through the same input and swing rules as the player, score and results on the HUD, rematch key. Runs on `MatchSimulation`, a pure fixed-tick simulation of the whole match. **Bot difficulty and feel untested by a human** |
-| Online multiplayer, dedicated server, matchmaking | **Not implemented** |
+| LAN multiplayer (1v1) | Dedicated headless server (`tools/run_server.ps1`) that owns the whole match; clients join by address from the main menu, send inputs only, predict their own movement and draw the opponent and ball slightly in the past. Verified on one machine over real UDP sockets, including three separate processes. **Not yet tried between two PCs, and not played by humans** |
+| Internet play, accounts, lobbies, reconnect, matchmaking, ranked | **Not implemented** |
 | Doubles, cosmetics, model animations | **Not implemented** |
 | Full game-ready character models | **Not supplied**; your team creates them |
 
@@ -52,11 +62,11 @@ RallyPop_Pickleball_Godot_Starter/
 ├── prompts/                          ← Copy-paste prompts for Claude
 ├── docs/                             ← Gameplay, architecture, rules, QA, roadmap
 ├── references/                       ← ORIGINAL concept images and technical diagrams
-├── scenes/                           ← Godot scenes (main, court, player, ball, game)
+├── scenes/                           ← Godot scenes (main, court, player, ball, game, server)
 ├── scripts/                          ← Runtime systems, separated by domain
 ├── assets/                           ← Drop your original Blender/GLB assets here
 ├── tests/                            ← Godot headless smoke checks
-├── tools/                            ← PowerShell and bash validation wrappers
+├── tools/                            ← Validation, server launch and LAN smoke-test scripts
 ├── .vscode/                           ← Editor recommendations
 └── .gitignore, .gitattributes        ← Repo hygiene
 ```

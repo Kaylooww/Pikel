@@ -136,6 +136,25 @@
 - [x] Training scene, 120 headless frames — exit 0, no script errors.
 - [ ] Scoring is exercised only by unit tests; no playable match exists yet.
 
+## RP-025 and RP-030 to RP-033 results recorded 2026-11-17 (same machine and Godot build)
+
+- [x] Headless import — exit 0, no errors or warnings printed.
+- [x] Unit tests, all pass: rules 7, net collision 11, court dimensions 39, gameplay tuning 15, shot solver 24, camera 20, input 26, swing contact 22, rally state 52, rally controller 25, match score 24, motion 14, match simulation 27, aim advice 23, net protocol 34, match server 32, netcode 32.
+- [x] Integration tests, all pass: training preview 20, training rally 30, singles match 20, LAN match 27 (run three times in a row).
+- [x] Two bot-vs-bot matches to 11 inside `test_match_simulation.gd`: 37 rallies ending 9-11 and 32 rallies ending 7-11; the same seeds replayed identically.
+- [x] Scenes booted headless for 120 frames with exit 0: main menu, training, singles match, online match.
+- [x] `tools/lan_smoke_test.sh`: server and two clients as separate processes, final `3-1`, all three agreed, 0 rejected inputs, about 70 seconds.
+- [x] `tools/lan_smoke_test.ps1`: same, final `3-0`, all three agreed.
+- [x] Server started with `--bot` through `tools/run_server.sh`, one bot client joined from another process: final `0-2`, both agreed.
+- [x] Client pointed at a port with no server: reports "No server answered at that address" after 8 seconds and exits with code 1.
+- [x] Each of the five network commits was checked out on its own, imported without errors, and passed its own tests.
+- [ ] Everything above ran on one machine. No match has been played between two PCs, over Wi-Fi, or with real latency, jitter or loss.
+- [ ] No human has played the singles match or an online match. Bot difficulty, the mirrored far-end camera, the HUD wording and how prediction and the delayed opponent feel are all unjudged.
+- [x] `tools/run_server.ps1 -Bot` run for real: it stayed attached, a bot client in another process played a match against it, final `2-1`, both agreed.
+- [x] `tools/validate_project.ps1` run end to end: all 21 test files, exit 0, 36 seconds. With a deliberately failing test added it exits 1 and names the test.
+
+**Correction to earlier entries:** until this date `tools/validate_project.ps1` had never been run, and it could not have passed. The standard Windows `Godot.exe` is a window-mode program, so PowerShell neither waited for it nor received an exit code, and the script stopped at its first check with "Godot import/parse failed". Every result recorded above came from running the same Godot commands directly in bash, which does wait. The script now pipes Godot's output, which makes PowerShell wait and read the exit code, and it discovers tests instead of listing them. `tools/run_server.ps1` had the same flaw and the same fix.
+
 Still not performed: F5 gameplay with a human, Windows export, MCP editor connection.
 
 Do not describe this project as a fully validated production game.

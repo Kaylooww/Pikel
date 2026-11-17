@@ -43,7 +43,7 @@ Always branch from an up-to-date `main` (`git checkout main`, `git pull origin m
 
 Make the smallest change that fully completes the task's acceptance line in the roadmap. Follow the module boundaries in `docs/02_TECHNICAL_ARCHITECTURE.md`: gameplay logic never depends on UI nodes, `scripts/core/court_dimensions.gd` owns all dimensions, and pure logic lives in classes that can be tested without a scene. Do not touch unrelated modules and do not add dependencies.
 
-Any change to physics, rules, match state, networking or serialization needs a test in `tests/unit/` in the same style as the existing ones (a `SceneTree` script that prints `PASS: N ...` and exits 0, or prints failures and exits 1). Add each new test to both `tools/validate_project.ps1` and `tools/validate_project.sh`.
+Any change to physics, rules, match state, networking or serialization needs a test in `tests/unit/` in the same style as the existing ones (a `SceneTree` script that prints `PASS: N ...` and exits 0, or prints failures and exits 1). The validate scripts run every `.gd` file in `tests/unit` and `tests/integration`, so a new test file is picked up without registering it.
 
 ## 6. Verify
 
@@ -52,8 +52,11 @@ Godot 4.7.2 is on PATH as `godot`. Run all of these and read the output; every o
 ```bash
 godot --headless --path . --editor --quit
 godot --headless --path . --script res://tests/unit/<each test file>.gd
-godot --headless --path . --quit-after 120 res://scenes/game/training.tscn
+godot --headless --path . --script res://tests/integration/<each test file>.gd
+godot --headless --path . --quit-after 120 res://scenes/game/<each scene>.tscn
 ```
+
+`tools/validate_project.sh` runs the import and every test. If you touched anything under `scripts/networking/`, the match simulation or the bot, also run `tools/lan_smoke_test.sh`, which plays a match with a server and two clients as separate processes (about a minute).
 
 The first command also generates the `.uid` file for any new script; those get committed. If something fails, fix the root cause and rerun. Do not weaken a test to make it pass. If you cannot get to green, do not commit: report the failure with its output and stop.
 

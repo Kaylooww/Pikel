@@ -13,7 +13,14 @@
 godot --headless --path . --editor --quit
 godot --headless --path . --script res://tests/unit/test_rules.gd
 ```
-Or `./tools/validate_project.ps1` on Windows when Godot is on PATH. These cannot establish gameplay feel or correctness of the complete sport rules.
+Or `./tools/validate_project.ps1` on Windows when Godot is on PATH: it runs the import and every unit and integration test. These cannot establish gameplay feel or correctness of the complete sport rules.
+
+### Network checks
+- `tests/unit/test_net_protocol.gd`, `test_match_server.gd`, `test_netcode.gd`: wire format, server authority and limits, prediction and interpolation. No sockets.
+- `tests/integration/test_lan_match.gd`: a server and two clients over UDP on localhost inside one process; bots play a full match. Needs UDP port 47811 free.
+- `./tools/lan_smoke_test.ps1` (or `.sh`): the same match as three separate Godot processes; passes when the server and both clients print the same final score. About a minute. Not part of `validate_project` because of its length.
+
+What none of these cover: two physical machines, a real router or Wi-Fi, real latency, jitter and loss, and how any of it feels to a person.
 
 ## First acceptance tests
 | ID | Scenario | Pass criteria |
