@@ -20,4 +20,8 @@ GODOT="${1:-godot}"
 "$GODOT" --headless --path . --script res://tests/unit/test_match_simulation.gd
 "$GODOT" --headless --path . --script res://tests/unit/test_aim_advice.gd
 "$GODOT" --headless --path . --script res://tests/integration/test_singles_match.gd
+"$GODOT" --headless --path . --script res://tests/unit/test_net_protocol.gd
+"$GODOT" --headless --path . --script res://tests/unit/test_match_server.gd
+"$GODOT" --headless --path . --script res://tests/unit/test_netcode.gd
+"$GODOT" --headless --path . --script res://tests/integration/test_lan_match.gd
 echo "Basic Godot checks passed; manual gameplay testing still required."

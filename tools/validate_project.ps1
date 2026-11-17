@@ -37,4 +37,12 @@ if ($LASTEXITCODE -ne 0) { throw "Godot match simulation checks failed: $LASTEXI
 if ($LASTEXITCODE -ne 0) { throw "Godot aim advice checks failed: $LASTEXITCODE" }
 & $Godot --headless --path . --script res://tests/integration/test_singles_match.gd
 if ($LASTEXITCODE -ne 0) { throw "Godot singles match checks failed: $LASTEXITCODE" }
+& $Godot --headless --path . --script res://tests/unit/test_net_protocol.gd
+if ($LASTEXITCODE -ne 0) { throw "Godot net protocol checks failed: $LASTEXITCODE" }
+& $Godot --headless --path . --script res://tests/unit/test_match_server.gd
+if ($LASTEXITCODE -ne 0) { throw "Godot match server checks failed: $LASTEXITCODE" }
+& $Godot --headless --path . --script res://tests/unit/test_netcode.gd
+if ($LASTEXITCODE -ne 0) { throw "Godot netcode checks failed: $LASTEXITCODE" }
+& $Godot --headless --path . --script res://tests/integration/test_lan_match.gd
+if ($LASTEXITCODE -ne 0) { throw "Godot LAN match checks failed: $LASTEXITCODE" }
 Write-Host "Basic Godot checks passed. Manual F6/F5 gameplay playtesting is still required."
