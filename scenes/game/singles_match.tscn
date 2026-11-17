@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/singles_match.gd" id="1_match"]
+[ext_resource type="PackedScene" path="res://scenes/game/match_court.tscn" id="2_court"]
+
+[node name="SinglesMatch" type="Node"]
+script = ExtResource("1_match")
+
+[node name="MatchCourt" parent="." instance=ExtResource("2_court")]

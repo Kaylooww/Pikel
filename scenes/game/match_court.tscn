@@ -1,0 +1,25 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/match_court.gd" id="1_court_script"]
+[ext_resource type="PackedScene" path="res://scenes/court/court.tscn" id="2_court"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://scenes/ball/ball.tscn" id="4_ball"]
+[ext_resource type="Script" path="res://scripts/gameplay/court_camera.gd" id="5_camera"]
+
+[node name="MatchCourt" type="Node3D"]
+script = ExtResource("1_court_script")
+
+[node name="Court" parent="." instance=ExtResource("2_court")]
+
+[node name="HomePlayer" parent="." instance=ExtResource("3_player")]
+
+[node name="AwayPlayer" parent="." instance=ExtResource("3_player")]
+home_side = false
+
+[node name="Ball" parent="." instance=ExtResource("4_ball")]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.819152, 0.573576, 0, -0.573576, 0.819152, 0, 9.2, 12)
+script = ExtResource("5_camera")
+current = true
+fov = 58.0

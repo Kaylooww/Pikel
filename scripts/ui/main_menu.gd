@@ -22,13 +22,18 @@ func _ready() -> void:
     subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     subtitle.add_theme_font_size_override("font_size", 16)
     column.add_child(subtitle)
+    var singles := Button.new()
+    singles.text = "PLAY SINGLES MATCH (vs bot)"
+    singles.custom_minimum_size = Vector2(420, 58)
+    column.add_child(singles)
+    singles.pressed.connect(_on_singles)
     var play := Button.new()
-    play.text = "PLAY PRACTICE PROTOTYPE"
+    play.text = "PRACTICE COURT"
     play.custom_minimum_size = Vector2(420, 58)
     column.add_child(play)
     play.pressed.connect(_on_play)
     var note := Label.new()
-    note.text = "Prototype only: multiplayer, full serve/scoring rules and cosmetics are planned."
+    note.text = "Prototype: placeholder art, a basic bot, singles only. Doubles and cosmetics are planned."
     note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     column.add_child(note)
@@ -37,6 +42,9 @@ func _ready() -> void:
     help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     column.add_child(help)
+
+func _on_singles() -> void:
+    get_tree().change_scene_to_file("res://scenes/game/singles_match.tscn")
 
 func _on_play() -> void:
     get_tree().change_scene_to_file("res://scenes/game/training.tscn")

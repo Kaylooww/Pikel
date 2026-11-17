@@ -38,7 +38,7 @@ Progress is tracked here: `[x]` done, `[ ]` open. `prompts/NEXT.md` picks the fi
 - [x] **RP-022 (P0):** Legal serves and proper diagonal service landing.
 - [x] **RP-023 (P0):** NVZ/volley/momentum logic.
 - [x] **RP-024 (P0):** Side-out score/rotation and match end condition.
-- [ ] **RP-025 (P1):** Full local singles with bot or second controller.
+- [x] **RP-025 (P1):** Full local singles with bot or second controller.
 
 ## Sprint 3: networking foundation
 - [ ] **RP-030 (P0):** Dedicated headless match server with fixed tick and match IDs.

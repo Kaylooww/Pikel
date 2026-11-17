@@ -17,4 +17,7 @@ GODOT="${1:-godot}"
 "$GODOT" --headless --path . --script res://tests/integration/test_training_rally.gd
 "$GODOT" --headless --path . --script res://tests/unit/test_match_score.gd
 "$GODOT" --headless --path . --script res://tests/unit/test_motion.gd
+"$GODOT" --headless --path . --script res://tests/unit/test_match_simulation.gd
+"$GODOT" --headless --path . --script res://tests/unit/test_aim_advice.gd
+"$GODOT" --headless --path . --script res://tests/integration/test_singles_match.gd
 echo "Basic Godot checks passed; manual gameplay testing still required."

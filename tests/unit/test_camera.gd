@@ -52,6 +52,13 @@ func _initialize() -> void:
     _assert(cam.position.distance_to(chase.desired_position(target.position)) < 0.001 and is_equal_approx(cam.fov, chase.fov), "camera glides to the match view")
     cam.next_rig()
     _assert(cam.active_rig() == training, "next_rig wraps around")
+    # Away side: the same view mirrored to the other end of the court.
+    cam.side = -1
+    target.position = Vector3(2.0, 0.0, -5.0)
+    cam.snap()
+    var home_view: Vector3 = training.desired_position(Vector3(-2.0, 0.0, 5.0))
+    _assert(cam.position.is_equal_approx(Vector3(-home_view.x, home_view.y, -home_view.z)), "away camera sits behind the away baseline, mirrored")
+    _assert(cam.position.z < -5.0 and (-cam.basis.z).z > 0.0, "away camera looks toward the home half")
     cam.free()
     target.free()
 

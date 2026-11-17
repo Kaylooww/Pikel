@@ -9,7 +9,7 @@
 1. Extract the ZIP to a writable folder such as `C:\Dev\RallyPop_Pickleball_Godot_Starter` (do **not** work inside the ZIP).
 2. Download Godot 4.7.2 standard build: <https://godotengine.org/download/windows/>.
 3. Launch Godot Project Manager → **Import** → choose this folder's `project.godot` → **Import & Edit**.
-4. Let the editor import the project, then press **F5**. Choose **PLAY PRACTICE PROTOTYPE**.
+4. Let the editor import the project, then press **F5**. Choose **PLAY SINGLES MATCH (vs bot)** or **PRACTICE COURT**.
 5. Use **WASD** to move, **Shift** to sprint, move the **mouse** to aim, **left click** for a drive, **right click** for a softer dink, **R** to reset, **C** to switch camera view, and **Esc** for the menu.
 6. Read **[SETUP_WINDOWS_GODOT_CLAUDE.md](SETUP_WINDOWS_GODOT_CLAUDE.md)** and paste **[prompts/MASTER_STARTING_PROMPT.md](prompts/MASTER_STARTING_PROMPT.md)** into Claude Code from this project folder.
 
@@ -36,7 +36,7 @@
 | Serve rules | Server must stand behind the baseline in the correct half; serve must land in the diagonal service court; the preview warns before a faulty serve. Treated as a drop serve: no swing-motion checks. Always the right court until scoring exists |
 | Kitchen rules | Volleying while standing in the kitchen (line included) is a fault, and so is stepping in within 0.6 s after a volley; standing there and hitting bounced balls is allowed; the preview warns. Players are a single ground point, not two feet |
 | Scoring | `MatchScore`: singles side-out scoring, serve side from the server's score, win at 11 by 2 with optional cap; `RallyController` scores each rally once and picks the next server; 24 unit checks plus 11 controller checks. **Not shown in the playable scene yet**: practice still has the player serve every ball |
-| Playable singles match (opponent serves, score on HUD, match end screen) | **Not implemented** (RP-025) |
+| Playable singles match vs bot | `scenes/game/singles_match.tscn`, from the main menu: side-out scoring to 11 by 2, the bot serves and returns through the same input and swing rules as the player, score and results on the HUD, rematch key. Runs on `MatchSimulation`, a pure fixed-tick simulation of the whole match. **Bot difficulty and feel untested by a human** |
 | Online multiplayer, dedicated server, matchmaking | **Not implemented** |
 | Doubles, cosmetics, model animations | **Not implemented** |
 | Full game-ready character models | **Not supplied**; your team creates them |

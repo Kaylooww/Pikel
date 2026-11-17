@@ -16,6 +16,8 @@ class Contact extends RefCounted:
     var in_reach: bool = false
     var timing: Timing = Timing.CLEAN
     var stretched: bool = false
+    var approaching: bool = false ## the ball is flying toward the hitter, so timing is being judged
+    var seconds_early: float = 0.0 ## time until ideal contact; negative once the ball has gone past
     var side: int = 1
     var offset: Vector3 = Vector3.ZERO ## added to the aim point to get the real target
 
@@ -60,6 +62,8 @@ static func evaluate(player_position: Vector3, ball_position: Vector3, ball_velo
     if approach_speed > MIN_APPROACH_SPEED:
         var contact_z: float = player_position.z - side * tuning.contact_lead
         var seconds_early: float = (contact_z - ball_position.z) * side / approach_speed
+        contact.approaching = true
+        contact.seconds_early = seconds_early
         if absf(seconds_early) > tuning.clean_timing_window:
             contact.timing = Timing.EARLY if seconds_early > 0.0 else Timing.LATE
             var amount: float = clampf((absf(seconds_early) - tuning.clean_timing_window) / (tuning.max_timing_window - tuning.clean_timing_window), 0.0, 1.0)

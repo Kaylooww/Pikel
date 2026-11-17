@@ -8,6 +8,7 @@ class_name CourtCamera
     preload("res://config/camera_match.tres"),
 ]
 var rig_index: int = 0
+var side: int = 1 ## +1 films from behind the home baseline, -1 from behind the away baseline
 var target: Node3D
 
 func active_rig() -> CameraRig:
@@ -27,6 +28,9 @@ func _process(delta: float) -> void:
 
 func _place(weight: float) -> void:
     var rig: CameraRig = active_rig()
-    position = position.lerp(rig.desired_position(target.position), weight)
+    # Rigs are written for the home half. For the away half, mirror the court through the net post line.
+    var mirror := Vector3(side, 1.0, side)
+    var seen_from_home: Vector3 = target.position * mirror
+    position = position.lerp(rig.desired_position(seen_from_home) * mirror, weight)
     fov = lerpf(fov, rig.fov, weight)
-    basis = Basis.looking_at(rig.look_target(target.position) - position, Vector3.UP)
+    basis = Basis.looking_at(rig.look_target(seen_from_home) * mirror - position, Vector3.UP)

@@ -31,4 +31,10 @@ if ($LASTEXITCODE -ne 0) { throw "Godot training rally checks failed: $LASTEXITC
 if ($LASTEXITCODE -ne 0) { throw "Godot match score checks failed: $LASTEXITCODE" }
 & $Godot --headless --path . --script res://tests/unit/test_motion.gd
 if ($LASTEXITCODE -ne 0) { throw "Godot motion checks failed: $LASTEXITCODE" }
+& $Godot --headless --path . --script res://tests/unit/test_match_simulation.gd
+if ($LASTEXITCODE -ne 0) { throw "Godot match simulation checks failed: $LASTEXITCODE" }
+& $Godot --headless --path . --script res://tests/unit/test_aim_advice.gd
+if ($LASTEXITCODE -ne 0) { throw "Godot aim advice checks failed: $LASTEXITCODE" }
+& $Godot --headless --path . --script res://tests/integration/test_singles_match.gd
+if ($LASTEXITCODE -ne 0) { throw "Godot singles match checks failed: $LASTEXITCODE" }
 Write-Host "Basic Godot checks passed. Manual F6/F5 gameplay playtesting is still required."
