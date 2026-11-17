@@ -94,6 +94,18 @@ In the training scene `training_game.gd` reports each step into the kitchen, and
 Limits: always the right court, because choosing the side needs the score (RP-024); a serve that clips the net is a fault because the net stops the ball, although the real rule plays it; the rally winner is shown but no points are awarded (RP-024).
 
 ## Scoring engine
+**Implemented for singles (RP-024):** `scripts/rules/match_score.gd` (`MatchScore`), pinned by `tests/unit/test_match_score.gd`.
+
+- Side-out scoring: `record_rally(rally_id, winner)` gives the server a point when the server won the rally; otherwise it is a side-out, no point, and the receiver becomes the server.
+- Serve side: the server serves from their right court when their own score is even, left when odd (`serve_from_right()`).
+- Match end: first to `points_to_win` (11) leading by `win_by` (2). An optional `point_cap` ends it at that score whatever the margin. Because only the server scores, a match can only be won on your own serve.
+- A rally id is counted once; repeats, older ids and rallies without a winner change nothing. Nothing changes after the match is won.
+- `score_call()` gives the score as called: server's points first.
+
+`RallyController.new_match(...)` creates the score; each finished rally is recorded before `rally_ended` fires, `match_ended` fires once, and `start_next()` starts the following rally with the right server and serve side.
+
+Not implemented: doubles (server number, partner positions, the 0-0-2 start), rally scoring as an alternative mode, games per match and end changes, timeouts. The playable training scene does not run a match yet: the player serves every practice ball and no score is kept (RP-025).
+
 - Implement **traditional side-out scoring** as the competitive default; only serving side scores points.
 - Track team/individual scores, current service team, server number (for doubles), player positions, right/left court assignment, first service sequence nuance, win-by-two and score cap/match configuration.
 - Do not derive server rotation solely from score without storing team/person state.
@@ -116,4 +128,4 @@ The kitchen is not forbidden ground. Standing there is allowed; hitting an airbo
 | Team scores while receiving under traditional rules | Side-out rather than point |
 
 ## Known starter status
-`RulesEngine` has helper geometry and diagonal-target predicates. Rally phases and basic faults are in `RallyState` (above). Serve position, service courts and kitchen/momentum faults are in `RallyState` too. Scoring is **not implemented**. The practice HUD explicitly avoids claiming official scoring.
+`RulesEngine` has helper geometry and diagonal-target predicates. Rally phases and basic faults are in `RallyState` (above). Serve position, service courts and kitchen/momentum faults are in `RallyState` too. Singles scoring is in `MatchScore`; no playable match uses it yet. The practice HUD explicitly avoids claiming official scoring.

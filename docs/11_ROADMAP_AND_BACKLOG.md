@@ -37,7 +37,7 @@ Progress is tracked here: `[x]` done, `[ ]` open. `prompts/NEXT.md` picks the fi
   - [x] Live play: the ball and players emit `RallyEvent`s and the training rally is adjudicated by `RallyState` instead of the ball's own fault strings.
 - [x] **RP-022 (P0):** Legal serves and proper diagonal service landing.
 - [x] **RP-023 (P0):** NVZ/volley/momentum logic.
-- [ ] **RP-024 (P0):** Side-out score/rotation and match end condition.
+- [x] **RP-024 (P0):** Side-out score/rotation and match end condition.
 - [ ] **RP-025 (P1):** Full local singles with bot or second controller.
 
 ## Sprint 3: networking foundation
