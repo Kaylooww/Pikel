@@ -158,3 +158,12 @@
 Still not performed: F5 gameplay with a human, Windows export, MCP editor connection.
 
 Do not describe this project as a fully validated production game.
+
+## RP-034 results recorded 2026-11-17 (same machine and Godot build)
+
+- [x] Headless import: exit 0, no errors.
+- [x] `tools/validate_project.sh`: all 21 test files pass. Changed counts: rally state 54, match simulation 31, net protocol 35, match server 40, LAN match 33 (run three times in a row).
+- [x] `tools/lan_smoke_test.sh`: protocol v2, final `2-3`, server and both clients agreed, 0 rejected inputs.
+- [x] Main menu, training, singles match and online match scenes booted headless for 120 frames: exit 0.
+- [x] Windowed client (run through the Godot MCP bridge, not by a person) joined a `--bot` server; the server process was then killed. The client printed `Connection lost. Trying to reconnect …`, retried for 20 s, then `Lost the connection to the server.` Only the log was read; nobody looked at the screen.
+- [ ] A reconnect over a real dropped Wi-Fi link, and the HUD wording while paused, have not been seen by a human.

@@ -165,6 +165,13 @@ func _initialize() -> void:
     _assert(r.fault == F.NET and r.winner_side == winner and r.log.size() == 2, "a finished rally cannot end twice")
     _assert(r.log[0].tick == 10 and r.log[1].type == RallyEvent.Type.NET, "the log keeps tick and type")
 
+    # Serve clock (RP-034).
+    r = RallyState.new(4, AWAY)
+    _assert(r.apply(RallyEvent.serve_timeout(_id(), 4, 900)) and _ended(r, F.SERVE_CLOCK, AWAY), "a server who runs out of time loses the rally")
+    r = RallyState.new(5, HOME)
+    _hit(r, HOME)
+    _assert(not r.apply(RallyEvent.serve_timeout(_id(), 5, 900)) and not r.is_over(), "the serve clock means nothing once the serve is hit")
+
     if errors.is_empty():
         print("PASS: %d rally state checks" % checks)
         quit(0)

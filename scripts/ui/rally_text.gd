@@ -18,6 +18,7 @@ static func fault_text(reason: RallyState.Fault, winner_side: int, serve_from_ri
         RallyState.Fault.KITCHEN_MOMENTUM: what = "KITCHEN FAULT — momentum carried into the kitchen after a volley"
         RallyState.Fault.SERVE_POSITION: what = "FOOT FAULT — serve from behind the baseline, %s half" % ("right" if serve_from_right else "left")
         RallyState.Fault.SERVE_COURT: what = "SERVICE FAULT — serve must land in the diagonal service court"
+        RallyState.Fault.SERVE_CLOCK: what = "TIME VIOLATION — the serve was not hit in time"
         _: what = "DOUBLE HIT"
     return "%s  —  %s" % [what, "you win the rally" if winner_side == my_side else "opponent wins the rally"]
 

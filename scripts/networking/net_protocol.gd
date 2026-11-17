@@ -8,12 +8,18 @@ class_name NetProtocol
 ## this way, sprint or not, swing or not, aiming here". There is no message for "I hit the
 ## ball", "I am at this position" or "the score is". The server works those out.
 
-const VERSION: int = 1
+const VERSION: int = 2
 const DEFAULT_PORT: int = 7777
 const MAX_SEQ_JUMP: int = 600 ## an input this far ahead of the last one is not believable
 const AIM_LIMIT: float = 20.0 ## metres; aim points are clamped to this before use
 
-enum EventType { RALLY_STARTED, SWING, RALLY_ENDED, MATCH_ENDED, MATCH_ABORTED }
+enum EventType { RALLY_STARTED, SWING, RALLY_ENDED, MATCH_ENDED, MATCH_ABORTED, OPPONENT_AWAY, OPPONENT_BACK }
+enum Refusal { VERSION, FULL } ## why the server would not seat a connection
+
+## A vanished peer is noticed after 3 to 6 seconds instead of the ENet default of 5 to 30.
+static func set_timeouts(peer: MultiplayerPeer, peer_id: int) -> void:
+    if peer is ENetMultiplayerPeer:
+        (peer as ENetMultiplayerPeer).get_peer(peer_id).set_timeout(0, 3000, 6000)
 
 # --- client -> server -----------------------------------------------------------------
 
@@ -38,14 +44,15 @@ static func decode_input(data: Variant, match_id: int) -> PlayerInput:
 
 # --- server -> client -----------------------------------------------------------------
 
-static func encode_welcome(match_id: int, side: int, points_to_win: int, win_by: int) -> Array:
-    return [VERSION, match_id, side, MatchSimulation.TICK_RATE, points_to_win, win_by]
+## `token` is this player's seat ticket: a client that loses its connection shows it to get the seat back.
+static func encode_welcome(match_id: int, side: int, points_to_win: int, win_by: int, token: String) -> Array:
+    return [VERSION, match_id, side, MatchSimulation.TICK_RATE, points_to_win, win_by, token]
 
-## Returns {match_id, side, tick_rate, points_to_win, win_by}, or {} if malformed.
+## Returns {match_id, side, tick_rate, points_to_win, win_by, token}, or {} if malformed.
 static func decode_welcome(data: Variant) -> Dictionary:
-    if not _fits(data, [TYPE_INT, TYPE_INT, TYPE_INT, TYPE_INT, TYPE_INT, TYPE_INT]) or data[0] != VERSION or absi(data[2]) != 1:
+    if not _fits(data, [TYPE_INT, TYPE_INT, TYPE_INT, TYPE_INT, TYPE_INT, TYPE_INT, TYPE_STRING]) or data[0] != VERSION or absi(data[2]) != 1:
         return {}
-    return {"match_id": data[1], "side": data[2], "tick_rate": data[3], "points_to_win": data[4], "win_by": data[5]}
+    return {"match_id": data[1], "side": data[2], "tick_rate": data[3], "points_to_win": data[4], "win_by": data[5], "token": data[6]}
 
 static func encode_snapshot(sim: MatchSimulation, match_id: int, ack_seq: int) -> Array:
     var rally: RallyState = sim.referee.rally
@@ -106,6 +113,8 @@ static func decode_event(data: Variant) -> Dictionary:
         EventType.RALLY_ENDED: shape = [TYPE_INT, TYPE_INT, TYPE_INT, TYPE_INT, TYPE_BOOL, TYPE_INT, TYPE_INT] # rally_id, fault, fault_side, winner_side, serve_from_right, home_points, away_points
         EventType.MATCH_ENDED: shape = [TYPE_INT, TYPE_INT, TYPE_INT] # winner_side, home_points, away_points
         EventType.MATCH_ABORTED: shape = [TYPE_STRING] # reason
+        EventType.OPPONENT_AWAY: shape = [TYPE_INT] # seconds the match will wait for them
+        EventType.OPPONENT_BACK: shape = []
         _: return {}
     if not _fits(payload, shape):
         return {}

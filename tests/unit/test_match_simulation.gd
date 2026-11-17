@@ -64,6 +64,23 @@ func _initialize() -> void:
         sim.step({-1: PlayerInput.make(Vector2(900, 0), true)})
     _assert(before.distance_to(sim.positions[-1]) <= tuning.sprint_speed + 0.001, "a huge move vector is no faster than a sprint")
 
+    # Serve clock (RP-034): off unless set; when set, a server who never serves loses the rally.
+    var idle: MatchSimulation = MatchSimulation.new(tuning)
+    for i in range(1200):
+        idle.step({})
+    _assert(idle.referee.rally.rally_id == 1 and not idle.referee.rally.is_over(), "without a serve clock an idle server is never faulted")
+    var clocked: MatchSimulation = MatchSimulation.new(tuning)
+    clocked.serve_clock_ticks = 300
+    for i in range(299):
+        clocked.step({})
+    var timed_out: RallyState = clocked.referee.rally
+    _assert(not timed_out.is_over(), "the serve clock does not run out a tick early")
+    clocked.step({})
+    _assert(timed_out.fault == F.SERVE_CLOCK and timed_out.winner_side == -1 and clocked.score().server_side == -1, "an idle server loses the rally and the serve when the clock runs out")
+    for i in range(1200):
+        clocked.step({})
+    _assert(clocked.score().last_rally_id >= 3 and clocked.score().score_call() == "0-0", "the clock restarts for every serve, and two idle players only trade the serve")
+
     # Two bots play a whole match. Same seeds give the same match, tick for tick.
     var a: MatchSimulation = MatchSimulation.new(tuning)
     var b: MatchSimulation = MatchSimulation.new(tuning)

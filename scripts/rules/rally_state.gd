@@ -29,6 +29,7 @@ enum Fault {
     SERVE_COURT, ## serve landed in the kitchen or the wrong service court
     KITCHEN_VOLLEY, ## volleyed while standing in the kitchen
     KITCHEN_MOMENTUM, ## stepped into the kitchen right after a volley
+    SERVE_CLOCK, ## server did not serve in time
 }
 
 var rally_id: int = 0
@@ -59,7 +60,10 @@ func is_over() -> bool:
 func apply(event: RallyEvent) -> bool:
     if is_over() or event.rally_id != rally_id or event.id <= last_event_id:
         return false
-    if phase == Phase.WAITING_FOR_SERVE and not (event.type == RallyEvent.Type.HIT and event.side == server_side):
+    if event.type == RallyEvent.Type.SERVE_TIMEOUT:
+        if phase != Phase.WAITING_FOR_SERVE:
+            return false # the serve was hit; the clock no longer matters
+    elif phase == Phase.WAITING_FOR_SERVE and not (event.type == RallyEvent.Type.HIT and event.side == server_side):
         return false
     if event.type == RallyEvent.Type.KITCHEN_ENTRY and not _within_momentum(event.side, event.tick):
         return false # walking into the kitchen is only a problem right after a volley
@@ -70,6 +74,7 @@ func apply(event: RallyEvent) -> bool:
         RallyEvent.Type.BOUNCE: _on_bounce(event.position)
         RallyEvent.Type.NET: _end(Fault.NET, last_hitter)
         RallyEvent.Type.KITCHEN_ENTRY: _end(Fault.KITCHEN_MOMENTUM, event.side)
+        RallyEvent.Type.SERVE_TIMEOUT: _end(Fault.SERVE_CLOCK, server_side)
     return true
 
 func _within_momentum(side: int, tick: int) -> bool:

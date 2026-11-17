@@ -4,7 +4,7 @@ class_name RallyEvent
 ## the server) creates these with increasing ids; RallyState is the only thing that
 ## decides what they mean.
 
-enum Type { HIT, BOUNCE, NET, KITCHEN_ENTRY }
+enum Type { HIT, BOUNCE, NET, KITCHEN_ENTRY, SERVE_TIMEOUT }
 
 var id: int = 0 ## increases with every event in a match; used to drop duplicates
 var rally_id: int = 0
@@ -31,6 +31,10 @@ static func kitchen_entry(event_id: int, in_rally: int, at_tick: int, player_sid
 ## The ball was stopped by the net.
 static func net(event_id: int, in_rally: int, at_tick: int, at: Vector3 = Vector3.ZERO) -> RallyEvent:
     return _make(event_id, in_rally, at_tick, Type.NET, 0, at)
+
+## The server took too long to serve. Whoever runs the clock decides how long that is.
+static func serve_timeout(event_id: int, in_rally: int, at_tick: int) -> RallyEvent:
+    return _make(event_id, in_rally, at_tick, Type.SERVE_TIMEOUT, 0, Vector3.ZERO)
 
 static func _make(event_id: int, in_rally: int, at_tick: int, kind: Type, hitter_side: int, at: Vector3) -> RallyEvent:
     var event := RallyEvent.new()

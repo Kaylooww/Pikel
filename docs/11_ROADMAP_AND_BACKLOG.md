@@ -49,7 +49,7 @@ Progress is tracked here: `[x]` done, `[ ]` open. `prompts/NEXT.md` picks the fi
   - [x] Implemented and unit-tested with simulated latency, loss and bursts; exercised over localhost sockets.
   - [ ] Human check: play with real or injected latency, jitter and loss and judge whether movement and the delayed opponent feel right. No network-condition simulator is wired into the game yet.
 - [x] **RP-033 (P0):** Accurate authoritative hit and fault events. The server decides every swing, fault and point; clients receive numbered reliable events.
-- [ ] **RP-034 (P1):** Timeout, reconnect and error states.
+- [x] **RP-034 (P1):** Timeout, reconnect and error states. Seats kept 20 s with a ticket, 15 s serve clock, refusals with reasons, 3 to 6 s dead-link detection.
 - [ ] **RP-035 (P1):** Private match codes and public server deployment.
 
 ## Sprint 4: doubles and art

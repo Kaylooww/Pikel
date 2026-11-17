@@ -2,7 +2,8 @@ extends SceneTree
 ## Run with: godot --headless --path . --script res://tests/integration/test_lan_match.gd
 ## A real match server and two real clients talking over UDP on localhost, in one process
 ## (each has its own multiplayer API). Two bots play a short match through the full network
-## path; then a few unwelcome guests are sent away (RP-030 to RP-033).
+## path; then a few unwelcome guests are sent away (RP-030 to RP-033), and a dropped player
+## reconnects into the same match (RP-034).
 ## Needs UDP port 47811 free. Localhost has almost no latency or loss; see test_netcode.gd
 ## for those. Headless: says nothing about how the match looks.
 const PORT: int = 47811
@@ -13,6 +14,7 @@ var checks: int = 0
 var tuning := GameplayTuning.new()
 var events: Dictionary = {} ## client name -> Array of [type, payload]
 var failures: Dictionary = {} ## client name -> reason
+var notices: Dictionary = {} ## client name -> Array of connection notices
 
 func _initialize() -> void:
     _run()
@@ -106,21 +108,43 @@ func _run() -> void:
     # A third player is turned away.
     var carol: MatchClient = _client("C")
     await _until(func() -> bool: return failures.has("C"), 5.0)
-    _assert(failures.has("C") and carol.side == 0 and server.seats.size() == 2, "a third client is disconnected and gets no seat")
+    _assert(failures.has("C") and str(failures.get("C")).contains("two players") and carol.side == 0 and server.seats.size() == 2, "a third client is told the server is full and gets no seat")
 
     # Junk from a seated client is counted and ignored; the server keeps running.
     var rejected: int = server.rejected_inputs
     var alice_link: NetLink = alice.get_parent().get_node("NetLink")
     alice_link.submit_input.rpc_id(1, ["not", "an", "input"])
     alice_link.submit_input.rpc_id(1, [alice.match_id + 5, 999999, Vector2(1, 0), true, 1, Vector2.ZERO])
-    alice_link.hello.rpc_id(1, 12345)
+    alice_link.hello.rpc_id(1, 12345, "")
     await _until(func() -> bool: return server.rejected_inputs >= rejected + 2, 3.0)
     _assert(server.rejected_inputs >= rejected + 2 and server.seats.size() == 2, "malformed and mis-addressed input over the wire is rejected, and a second hello changes nothing")
 
-    # When one player leaves, the other is told and waits.
+    # The rematch starts. Then Bob's connection dies in the middle of it. A dead link cannot be
+    # produced on localhost, so the test closes Bob's socket under him (the server sees him go)
+    # and tells his client what ENet would have told it after a few silent seconds.
+    var rematch: int = server.match_id + (1 if server.sim.is_over() else 0)
+    await _pump([alice, bob], func() -> bool: return alice.match_id == rematch and bob.match_id == rematch and alice.latest != null and bob.latest != null, 6.0)
+    _assert(server.sim != null and not server.sim.is_over() and alice.match_id == rematch and bob.match_id == rematch, "the same two players are put into a rematch")
+    var old_peer: int = server.seats.find_key(-1)
+    bob.multiplayer.multiplayer_peer.close()
+    bob._on_lost("test: the link died")
+    # Hold Bob's retries until the server has noticed, so the kept-seat path is the one tested.
+    await _until(func() -> bool: return not server._held.is_empty(), 8.0)
+    _assert(server._held.has(-1) and server.sim != null, "the server notices the dead link and keeps the seat")
+    await _pump([alice, bob], func() -> bool: return _got(alice, E.OPPONENT_BACK) and bob.status == MatchClient.Status.PLAYING and bob.latest != null, 8.0)
+    _assert(bob.status == MatchClient.Status.PLAYING and bob.side == -1 and bob.match_id == rematch and server.match_id == rematch and server.seats.size() == 2 and server.seats.find_key(-1) != old_peer,
+        "a dropped client reconnects on a new connection and gets its seat back in the same match")
+    _assert(_got(alice, E.OPPONENT_AWAY) and _got(alice, E.OPPONENT_BACK) and not alice.paused and not failures.has("A") and not failures.has("B"), "the other player is told the opponent dropped and came back")
+    _assert(notices["B"].size() == 2 and str(notices["B"][1]).begins_with("Reconnected"), "the dropped client reports losing the connection and getting it back")
+    var bob_tick: int = bob.latest.tick
+    await _pump([alice, bob], func() -> bool: return bob.latest.tick > bob_tick + 30, 3.0)
+    _assert(bob.latest.tick > bob_tick + 30, "snapshots flow again after the reconnect")
+
+    # A player who leaves for good: the other waits out the reconnect time, then goes back to waiting.
     bob.leave()
-    await _until(func() -> bool: return _got(alice, E.MATCH_ABORTED), 5.0)
-    _assert(_got(alice, E.MATCH_ABORTED) and alice.status == MatchClient.Status.WAITING_FOR_MATCH and server.seats.size() == 1, "when one player leaves, the other is told and goes back to waiting")
+    await _until(func() -> bool: return _got(alice, E.MATCH_ABORTED), 8.0)
+    _assert(_count(alice, E.OPPONENT_AWAY) == 2 and _got(alice, E.MATCH_ABORTED) and alice.status == MatchClient.Status.WAITING_FOR_MATCH and server.seats.size() == 1 and server.sim == null,
+        "when a player leaves for good, the other is told, the seat is given up after the wait, and they go back to waiting")
 
     alice.leave()
     _finish()
@@ -158,6 +182,8 @@ func _client(branch_name: String) -> MatchClient:
     events[branch_name] = []
     client.event.connect(func(type: NetProtocol.EventType, payload: Array) -> void: events[branch_name].append([type, payload]))
     client.failed.connect(func(reason: String) -> void: failures[branch_name] = reason)
+    notices[branch_name] = []
+    client.notice.connect(func(text: String) -> void: notices[branch_name].append(text))
     var error: Error = client.join("127.0.0.1", PORT)
     if error != OK:
         failures[branch_name] = "join error %d" % error
@@ -179,6 +205,14 @@ func _count(client: MatchClient, type: NetProtocol.EventType) -> int:
 func _last(client: MatchClient, type: NetProtocol.EventType) -> Array:
     var found: Array = _all(client, type)
     return found[-1] if not found.is_empty() else []
+
+## Like _until, but keeps the clients ticking (a client makes its reconnect attempts in tick()).
+func _pump(clients: Array, done: Callable, seconds: float) -> void:
+    var deadline: int = Time.get_ticks_msec() + int(seconds * 1000.0)
+    while not done.call() and Time.get_ticks_msec() < deadline:
+        await physics_frame
+        for client: MatchClient in clients:
+            client.tick()
 
 ## Waits up to `seconds` of real time for `done`.
 func _until(done: Callable, seconds: float) -> void:
