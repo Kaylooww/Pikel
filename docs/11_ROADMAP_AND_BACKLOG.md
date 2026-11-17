@@ -51,6 +51,8 @@ Progress is tracked here: `[x]` done, `[ ]` open. `prompts/NEXT.md` picks the fi
 - [x] **RP-033 (P0):** Accurate authoritative hit and fault events. The server decides every swing, fault and point; clients receive numbered reliable events.
 - [x] **RP-034 (P1):** Timeout, reconnect and error states. Seats kept 20 s with a ticket, 15 s serve clock, refusals with reasons, 3 to 6 s dead-link detection.
 - [ ] **RP-035 (P1):** Private match codes and public server deployment.
+  - [x] Private match codes: server prints a 6-character code, players must enter it, wrong codes are refused with a reason.
+  - [ ] Public server deployment. Needs approval: paid hosting and an internet-facing port. Proposal in `docs/06_NETWORKING.md`.
 
 ## Sprint 4: doubles and art
 - [ ] **RP-040 (P0):** Four-player server match state with teams and rotation.

@@ -5,7 +5,7 @@ class_name MatchServer
 ## and score. Clients send input requests; it sends back snapshots and events.
 ##
 ## What it will not accept from a client:
-##   - anything before a correct `hello` (wrong protocol version is told why and disconnected)
+##   - anything before a correct `hello` (wrong protocol version or wrong match code is told why and disconnected)
 ##   - a third player (seats are home and away only)
 ##   - a seat that is not theirs: a dropped player gets their seat back only with the ticket from their welcome
 ##   - input for a side the sender does not own: the side comes from who sent it, never from the message
@@ -37,6 +37,7 @@ const REFUSAL_FLUSH_TICKS: int = 30 ## a refused connection is closed half a sec
 @export var win_by: int = 2
 @export var fill_with_bot: bool = false ## start with one human and a bot in the other seat
 @export var snapshot_every: int = 2 ## ticks between snapshots (2 = 30 per second)
+@export var match_code: String = "" ## the private code players must give; listen() makes one up if it is empty
 @export var tuning: GameplayTuning = preload("res://config/gameplay_tuning.tres")
 
 var link: NetLink ## set by the owner before listen(); with no link nothing is sent (unit tests)
@@ -60,6 +61,9 @@ var _tokens: Dictionary = {} ## side -> seat ticket: the secret that proves a ne
 var _held: Dictionary = {} ## side -> ticks left for a dropped player to come back; the match is paused while not empty
 
 func listen() -> Error:
+    if NetProtocol.clean_code(match_code) == "":
+        match_code = NetProtocol.new_match_code()
+    match_code = NetProtocol.clean_code(match_code)
     var peer := ENetMultiplayerPeer.new()
     var error: Error = peer.create_server(port, MAX_CONNECTIONS)
     if error != OK:
@@ -100,11 +104,15 @@ func on_peer_disconnected(peer_id: int) -> void:
         _abort("A player left the match.")
 
 ## `token` is "" for a new player, or the seat ticket a returning player was given.
-func on_hello(peer_id: int, version: int, token: String = "") -> void:
+## `code` must match match_code (a server that never listened, as in unit tests, has "").
+func on_hello(peer_id: int, version: int, token: String = "", code: String = "") -> void:
     if seats.has(peer_id):
         return
     if version != NetProtocol.VERSION:
         _refuse(peer_id, NetProtocol.Refusal.VERSION)
+        return
+    if code != match_code:
+        _refuse(peer_id, NetProtocol.Refusal.CODE)
         return
     var returning: Variant = _tokens.find_key(token) if token != "" else null
     if returning != null:

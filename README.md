@@ -15,10 +15,10 @@
 
 ## Play on a LAN (two PCs on the same network)
 
-1. On one PC, open PowerShell in the project folder and run `./tools/run_server.ps1`. Leave it open. The first time, Windows asks whether to allow Godot through the firewall: allow it on **Private** networks only.
+1. On one PC, open PowerShell in the project folder and run `./tools/run_server.ps1`. Leave it open. It prints a 6-character **match code**; share it with the other player (or pick your own with `-Code K7QX2M`). The first time, Windows asks whether to allow Godot through the firewall: allow it on **Private** networks only.
 2. Find that PC's address with `ipconfig` (the IPv4 address, for example `192.168.1.20`).
-3. On both PCs, start the game, type `192.168.1.20:7777` (your address) next to **JOIN LAN MATCH** and press it. The first to join plays from the near end; the match starts when the second joins.
-4. To try it alone, run `./tools/run_server.ps1 -Bot` and join `127.0.0.1:7777`: a bot takes the other seat.
+3. On both PCs, start the game, type `192.168.1.20:7777` (your address) and the match code, then press **JOIN MATCH**. A wrong code is refused with a message. The first to join plays from the near end; the match starts when the second joins.
+4. To try it alone, run `./tools/run_server.ps1 -Bot` and join `127.0.0.1:7777` with the code it prints: a bot takes the other seat.
 
 This is a trusted-LAN prototype: there are no accounts or passwords, so do not expose the port to the internet.
 
@@ -48,7 +48,8 @@ This is a trusted-LAN prototype: there are no accounts or passwords, so do not e
 | Playable singles match vs bot | `scenes/game/singles_match.tscn`, from the main menu: side-out scoring to 11 by 2, the bot serves and returns through the same input and swing rules as the player, score and results on the HUD, rematch key. Runs on `MatchSimulation`, a pure fixed-tick simulation of the whole match. **Bot difficulty and feel untested by a human** |
 | LAN multiplayer (1v1) | Dedicated headless server (`tools/run_server.ps1`) that owns the whole match; clients join by address from the main menu, send inputs only, predict their own movement and draw the opponent and ball slightly in the past. Verified on one machine over real UDP sockets, including three separate processes. **Not yet tried between two PCs, and not played by humans** |
 | Timeouts, reconnect, error states | A dropped player has 20 s to reconnect into the same match (the match pauses meanwhile); 15 s serve clock; refusals say why (full, wrong version); dead links noticed in 3 to 6 s. Socket-tested on localhost, and the windowed client was watched losing its server and giving up. **Reconnect over a real flaky network not tried** |
-| Internet play, accounts, lobbies, matchmaking, ranked | **Not implemented** |
+| Private match codes | The server makes up (or is given) a 6-character code; players must enter it to be seated; a wrong code is refused with a reason; 9 unit and 1 socket check. One code per server process, LAN only |
+| Internet play, public servers, accounts, lobby browser, matchmaking, ranked | **Not implemented**. Public deployment needs a decision on hosting and security first (see `docs/06_NETWORKING.md`) |
 | Doubles, cosmetics, model animations | **Not implemented** |
 | Full game-ready character models | **Not supplied**; your team creates them |
 

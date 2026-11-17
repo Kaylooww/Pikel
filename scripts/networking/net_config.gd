@@ -8,6 +8,7 @@ class_name NetConfig
 ## Never put passwords, tokens or keys here: there are none in this LAN prototype.
 
 static var host: String = "127.0.0.1"
+static var match_code: String = "" ## private match code; the server makes one up when it is empty
 static var port: int = NetProtocol.DEFAULT_PORT
 static var points_to_win: int = 11
 static var win_by: int = 2
@@ -22,6 +23,10 @@ static func read_command_line() -> void:
         var value: String = parts[1] if parts.size() > 1 else ""
         match parts[0]:
             "--join": set_address(value)
+            "--code":
+                match_code = NetProtocol.clean_code(value)
+                if match_code == "":
+                    printerr("Ignoring --code=%s: a code is 6 characters from %s. One will be made up instead." % [value, NetProtocol.CODE_LETTERS])
             "--port": port = _port_or(value, port)
             "--points": points_to_win = maxi(1, value.to_int())
             "--win-by": win_by = maxi(1, value.to_int())

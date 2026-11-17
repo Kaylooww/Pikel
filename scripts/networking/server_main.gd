@@ -13,6 +13,7 @@ func _ready() -> void:
     server.points_to_win = NetConfig.points_to_win
     server.win_by = NetConfig.win_by
     server.fill_with_bot = NetConfig.fill_with_bot
+    server.match_code = NetConfig.match_code
     server.match_started.connect(_on_match_started)
     server.match_finished.connect(_on_match_finished)
     var error: Error = server.listen()
@@ -23,6 +24,7 @@ func _ready() -> void:
     print("SERVER listening on port %d, protocol v%d, %d ticks per second, first to %d win by %d%s" % [
         server.port, NetProtocol.VERSION, MatchSimulation.TICK_RATE, server.points_to_win, server.win_by,
         ", empty seat filled by a bot" if server.fill_with_bot else ""])
+    print("SERVER match code: %s   (players type this next to the address)" % server.match_code)
 
 func _on_match_started(id: int) -> void:
     print("SERVER match %d started with %d player(s)" % [id, server.seats.size()])

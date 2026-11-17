@@ -90,7 +90,7 @@ For each seated player it applies queued inputs while that player has budget (on
 Its own player: predicted immediately, corrected on each snapshot by replaying unacknowledged inputs; corrections under 1.5 m are blended, larger ones (being placed on the serve spot) are shown at once. The opponent and ball: interpolated 4 ticks (about 67 ms) behind the newest snapshot, never extrapolated. The aim hints use the newest snapshot, so the arc can start a few centimetres from the drawn ball.
 
 ### Running it
-`tools/run_server.ps1` (or `.sh`) starts the server; options `-Port`, `-Points`, `-WinBy`, `-Bot`. Players join from the main menu with `address:port`. After a match the same players are put into a rematch 10 seconds later. If a player leaves, the match is aborted and the other waits for a new opponent.
+`tools/run_server.ps1` (or `.sh`) starts the server; options `-Port`, `-Points`, `-WinBy`, `-Bot`, `-Code`. It prints the private match code (made up with `Crypto` unless given: 6 characters, no O/0/I/1). Players join from the main menu with `address:port` and the code; `hello` carries the code, and a wrong one gets `refused` (protocol version 3). After a match the same players are put into a rematch 10 seconds later. If a player leaves, the match is aborted and the other waits for a new opponent.
 
 ### Verified, and how
 - Unit tests without sockets: protocol (34 checks), server authority and limits (32), prediction and interpolation under simulated latency, loss and bursts (32).
@@ -98,7 +98,14 @@ Its own player: predicted immediately, corrected on each snapshot by replaying u
 - `tools/lan_smoke_test`: the same as three separate processes. Run on 2026-11-17: both scripts passed, with the server and both clients reporting the same final score and zero rejected inputs.
 
 ### Known limits
-- One match per server process; no lobby codes, no spectators, singles only.
+- One match per server process, so one code per process; no lobby service that maps a code to a server, no spectators, singles only.
+
+### Public server deployment: proposal, not built (RP-035)
+This needs a human decision because it costs money and puts a port on the internet. Proposed first step:
+1. One small Linux VM (any provider, about 5 USD a month) running the headless server from a Linux export, as a systemd service, UDP 7777 open, one process per match on consecutive ports.
+2. Before that port is public: a token check on `hello` from a tiny lobby service, a per-address connection rate limit, and DTLS on the ENet link (Godot supports it) so seat tickets and codes are not readable on the wire.
+3. A lobby service (HTTP) that creates a match, starts a server process, and returns address plus code; the client then joins as today.
+Until those are approved and built, keep the server on a trusted LAN.
 - Reconnect works only while the same server process is running; a restarted server has forgotten every seat. A dead link cannot be produced on localhost, so the socket test cuts it by closing the client's socket.
 - No accounts, tokens or encryption. Trusted LAN only (see `docs/13_SECURITY_AND_BACKEND.md`).
 - Inputs are sent once each, unreliably; a lost input costs one tick of movement and a small correction. No redundancy yet.

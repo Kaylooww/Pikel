@@ -64,6 +64,12 @@ func _initialize() -> void:
     _assert(NetProtocol.decode_welcome([NetProtocol.VERSION + 1, 77, 1, 60, 11, 2, "t"]).is_empty(), "a welcome from another protocol version is refused")
     _assert(NetProtocol.decode_welcome([NetProtocol.VERSION, 77, 0, 60, 11, 2, "t"]).is_empty() and NetProtocol.decode_welcome([NetProtocol.VERSION, 77, 1, 60, 11, 2]).is_empty() and NetProtocol.decode_welcome([1, 2]).is_empty(), "a welcome with no real side, or the wrong size, is refused")
 
+    # Private match codes (RP-035).
+    var made: String = NetProtocol.new_match_code()
+    _assert(made.length() == 6 and NetProtocol.clean_code(made) == made and made != NetProtocol.new_match_code(), "a new match code is six readable characters and different each time")
+    _assert(NetProtocol.clean_code(" k7q-x2m ") == "K7QX2M", "a code typed in lower case with a dash and spaces is understood")
+    _assert(NetProtocol.clean_code("K7QX2") == "" and NetProtocol.clean_code("K7QX2MM") == "" and NetProtocol.clean_code("K0QX1M") == "", "a code of the wrong length or with look-alike characters is refused")
+
     # Events.
     var ended: Dictionary = NetProtocol.decode_event(NetProtocol.encode_event(5, 77, E.RALLY_ENDED, [3, int(RallyState.Fault.NET), 1, -1, true, 2, 4]))
     _assert(ended["id"] == 5 and ended["match_id"] == 77 and ended["type"] == E.RALLY_ENDED and ended["payload"] == [3, int(RallyState.Fault.NET), 1, -1, true, 2, 4], "rally-ended event survives")

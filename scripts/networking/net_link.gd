@@ -10,7 +10,7 @@ class_name NetLink
 ##     rejects them from anyone but the server, so a client cannot fake them.
 ## Payloads are plain Arrays; NetProtocol builds and checks them.
 
-signal hello_received(peer_id: int, version: int, token: String)
+signal hello_received(peer_id: int, version: int, token: String, code: String)
 signal input_received(peer_id: int, data: Array)
 signal welcome_received(data: Array)
 signal snapshot_received(data: Array)
@@ -18,9 +18,10 @@ signal event_received(data: Array)
 signal refused_received(reason: int)
 
 @rpc("any_peer", "call_remote", "reliable")
-func hello(version: int, token: String) -> void: ## token: "" for a new player, or the seat ticket from an earlier welcome
+## token: "" for a new player, or the seat ticket from an earlier welcome. code: the private match code.
+func hello(version: int, token: String, code: String) -> void:
     if multiplayer.is_server():
-        hello_received.emit(multiplayer.get_remote_sender_id(), version, token)
+        hello_received.emit(multiplayer.get_remote_sender_id(), version, token, code)
 
 ## Unreliable on purpose: a late input is useless, and the next one is already on its way.
 @rpc("any_peer", "call_remote", "unreliable_ordered")

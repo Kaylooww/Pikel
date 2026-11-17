@@ -37,13 +37,15 @@ var _last_event_id: int = 0
 var _connecting_ticks: int = 0
 var _host: String = ""
 var _port: int = 0
+var _code: String = "" ## private match code given to join()
 var _token: String = "" ## seat ticket from the last welcome; "" until the server has seated us in a match
 var _reconnect_ticks: int = 0
 var _resuming: bool = false ## the next welcome may be our old match coming back
 
-func join(host: String, port: int) -> Error:
+func join(host: String, port: int, code: String = "") -> Error:
     _host = host
     _port = port
+    _code = code
     var error: Error = _open()
     if error != OK:
         return error
@@ -127,7 +129,7 @@ func _open() -> Error:
 func _on_connected() -> void:
     status = Status.WAITING_FOR_MATCH
     NetProtocol.set_timeouts(multiplayer.multiplayer_peer, 1)
-    link.hello.rpc_id(1, NetProtocol.VERSION, _token)
+    link.hello.rpc_id(1, NetProtocol.VERSION, _token, _code)
 
 func _on_lost(reason: String) -> void:
     if status == Status.OFFLINE or status == Status.RECONNECTING:
@@ -146,6 +148,7 @@ func _on_refused(reason: int) -> void:
     match reason:
         NetProtocol.Refusal.VERSION: failed.emit("This game and the server are different versions.")
         NetProtocol.Refusal.FULL: failed.emit("That server already has two players.")
+        NetProtocol.Refusal.CODE: failed.emit("Wrong match code. Ask the host for the code their server printed.")
         _: failed.emit("The server refused the connection.")
 
 func _on_welcome(data: Array) -> void:

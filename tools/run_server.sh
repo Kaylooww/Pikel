@@ -4,6 +4,7 @@
 #   tools/run_server.sh                    two players needed, port 7777
 #   tools/run_server.sh --bot              one player, a bot takes the other seat
 #   tools/run_server.sh --port=7800 --points=5
+#   tools/run_server.sh --code=K7QX2M       choose the match code; otherwise one is made up and printed
 set -euo pipefail
 cd "$(dirname "$0")/.."
 exec "${GODOT:-godot}" --headless --path . res://scenes/server/match_server.tscn -- "$@"

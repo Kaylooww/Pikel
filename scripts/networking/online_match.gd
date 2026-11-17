@@ -18,7 +18,7 @@ func _ready() -> void:
     client.notice.connect(_on_notice)
     court.show_score("ONLINE MATCH")
     court.show_status("Connecting to %s:%d …" % [NetConfig.host, NetConfig.port])
-    var error: Error = client.join(NetConfig.host, NetConfig.port)
+    var error: Error = client.join(NetConfig.host, NetConfig.port, NetConfig.match_code)
     if error != OK:
         _on_failed("Could not start a connection (error %d)." % error)
 

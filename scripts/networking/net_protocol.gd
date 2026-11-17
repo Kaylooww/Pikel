@@ -8,13 +8,32 @@ class_name NetProtocol
 ## this way, sprint or not, swing or not, aiming here". There is no message for "I hit the
 ## ball", "I am at this position" or "the score is". The server works those out.
 
-const VERSION: int = 2
+const VERSION: int = 3
 const DEFAULT_PORT: int = 7777
 const MAX_SEQ_JUMP: int = 600 ## an input this far ahead of the last one is not believable
 const AIM_LIMIT: float = 20.0 ## metres; aim points are clamped to this before use
 
 enum EventType { RALLY_STARTED, SWING, RALLY_ENDED, MATCH_ENDED, MATCH_ABORTED, OPPONENT_AWAY, OPPONENT_BACK }
-enum Refusal { VERSION, FULL } ## why the server would not seat a connection
+enum Refusal { VERSION, FULL, CODE } ## why the server would not seat a connection
+const CODE_LENGTH: int = 6
+const CODE_LETTERS: String = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" ## no O/0 or I/1, which are easy to misread
+
+## A fresh private match code, for example "K7QX2M".
+static func new_match_code() -> String:
+    var code: String = ""
+    for byte: int in Crypto.new().generate_random_bytes(CODE_LENGTH):
+        code += CODE_LETTERS[byte % CODE_LETTERS.length()]
+    return code
+
+## What a player typed, as a code: upper case, spaces and dashes removed. "" if it cannot be a code.
+static func clean_code(text: String) -> String:
+    var code: String = text.strip_edges().to_upper().replace(" ", "").replace("-", "")
+    if code.length() != CODE_LENGTH:
+        return ""
+    for letter: String in code:
+        if not CODE_LETTERS.contains(letter):
+            return ""
+    return code
 
 ## A vanished peer is noticed after 3 to 6 seconds instead of the ENet default of 5 to 30.
 static func set_timeouts(peer: MultiplayerPeer, peer_id: int) -> void:

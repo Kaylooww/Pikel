@@ -7,13 +7,13 @@ cd "$(dirname "$0")/.."
 GODOT="${1:-godot}"
 PORT="${2:-47812}"
 LOGS="$(mktemp -d)"
-"$GODOT" --headless --path . res://scenes/server/match_server.tscn -- --port="$PORT" --points=3 --win-by=1 --exit-on-match-end > "$LOGS/server.log" 2>&1 &
+"$GODOT" --headless --path . res://scenes/server/match_server.tscn -- --port="$PORT" --points=3 --win-by=1 --code=SNEAK7 --exit-on-match-end > "$LOGS/server.log" 2>&1 &
 SERVER=$!
 sleep 2
-"$GODOT" --headless --path . res://scenes/game/online_match.tscn -- --join=127.0.0.1:"$PORT" --autoplay --exit-on-match-end --seed=7 > "$LOGS/home.log" 2>&1 &
+"$GODOT" --headless --path . res://scenes/game/online_match.tscn -- --join=127.0.0.1:"$PORT" --code=SNEAK7 --autoplay --exit-on-match-end --seed=7 > "$LOGS/home.log" 2>&1 &
 HOME_CLIENT=$!
 sleep 1
-"$GODOT" --headless --path . res://scenes/game/online_match.tscn -- --join=127.0.0.1:"$PORT" --autoplay --exit-on-match-end --seed=8 > "$LOGS/away.log" 2>&1 &
+"$GODOT" --headless --path . res://scenes/game/online_match.tscn -- --join=127.0.0.1:"$PORT" --code=SNEAK7 --autoplay --exit-on-match-end --seed=8 > "$LOGS/away.log" 2>&1 &
 AWAY_CLIENT=$!
 for _ in $(seq 1 600); do # up to ten minutes
     kill -0 "$SERVER" 2>/dev/null || kill -0 "$HOME_CLIENT" 2>/dev/null || kill -0 "$AWAY_CLIENT" 2>/dev/null || break
