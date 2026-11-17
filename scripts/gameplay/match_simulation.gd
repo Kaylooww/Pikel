@@ -9,7 +9,7 @@ class_name MatchSimulation
 ## a ball is in or a point is scored is decided here.
 
 signal rally_started(rally: RallyState)
-signal swing_resolved(side: int, result: SwingResult, contact: SwingContact.Contact)
+signal swing_resolved(side: int, result: SwingResult, contact: SwingContact.Contact, soft: bool) ## contact is null when the swing never got as far as judging reach
 signal ball_bounced(at: Vector3)
 signal rally_ended(rally: RallyState)
 signal match_ended(score: MatchScore)
@@ -124,7 +124,11 @@ func _place_for_serve() -> void:
     rally_started.emit(rally)
 
 func _hand_position(side: int) -> Vector3:
-    return positions[side] + Vector3(HAND_OFFSET.x * side, HAND_OFFSET.y, HAND_OFFSET.z * side)
+    return hand_position(positions[side], side)
+
+## Where a server standing at `feet` holds the ball before serving.
+static func hand_position(feet: Vector3, side: int) -> Vector3:
+    return feet + Vector3(HAND_OFFSET.x * side, HAND_OFFSET.y, HAND_OFFSET.z * side)
 
 func _try_swing(side: int, input: PlayerInput) -> void:
     var result: SwingResult = SwingResult.HIT
@@ -148,7 +152,7 @@ func _try_swing(side: int, input: PlayerInput) -> void:
                 ShotSolver.Reason.NET: result = SwingResult.NO_SHOT_NET
                 ShotSolver.Reason.BAD_TARGET: result = SwingResult.NO_SHOT_OUT
                 ShotSolver.Reason.TOO_FAST: result = SwingResult.NO_SHOT_TOO_FAST
-    swing_resolved.emit(side, result, contact)
+    swing_resolved.emit(side, result, contact, input.swing == PlayerInput.Swing.DINK)
     if result == SwingResult.HIT:
         referee.hit(side, ball.position, positions[side]) # may end the rally at once (foot fault, kitchen, two-bounce)
 

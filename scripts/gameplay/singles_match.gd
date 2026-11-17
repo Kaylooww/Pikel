@@ -12,7 +12,6 @@ var sim: MatchSimulation
 var opponent: PracticeBot
 var stand_in: PracticeBot
 var matches_started: int = 0
-var _last_swing_soft: bool = false
 var _awaiting_landing: bool = false
 
 func _ready() -> void:
@@ -37,7 +36,6 @@ func start_match() -> void:
 
 func _physics_process(_delta: float) -> void:
     var mine: PlayerInput = stand_in.decide(MatchView.from_simulation(sim, 1)) if autoplay else court.take_input()
-    _last_swing_soft = mine.swing == PlayerInput.Swing.DINK
     sim.step({1: mine, -1: opponent.decide(MatchView.from_simulation(sim, -1))})
     _show()
 
@@ -47,10 +45,10 @@ func _show() -> void:
     var score: MatchScore = sim.score()
     court.show_score(RallyText.score_line(score.score_of(1), score.score_of(-1), score.server_side, score.serve_from_right(), 1))
 
-func _on_swing_resolved(side: int, result: MatchSimulation.SwingResult, contact: SwingContact.Contact) -> void:
+func _on_swing_resolved(side: int, result: MatchSimulation.SwingResult, contact: SwingContact.Contact, soft: bool) -> void:
     if side != 1:
         return
-    court.show_status(RallyText.swing(result, _last_swing_soft, contact))
+    court.show_status(RallyText.swing(result, soft, contact.label() if contact != null else ""))
     if result == MatchSimulation.SwingResult.HIT:
         _awaiting_landing = true
         court.preview.hide_landing()
