@@ -1,4 +1,6 @@
 extends Control
+var address: LineEdit
+var join_note: Label
 
 func _ready() -> void:
     var background := ColorRect.new()
@@ -32,6 +34,25 @@ func _ready() -> void:
     play.custom_minimum_size = Vector2(420, 58)
     column.add_child(play)
     play.pressed.connect(_on_play)
+    var join_row := HBoxContainer.new()
+    join_row.add_theme_constant_override("separation", 8)
+    column.add_child(join_row)
+    address = LineEdit.new()
+    address.text = "%s:%d" % [NetConfig.host, NetConfig.port]
+    address.placeholder_text = "server address, e.g. 192.168.1.20:7777"
+    address.custom_minimum_size = Vector2(250, 58)
+    address.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    join_row.add_child(address)
+    var join := Button.new()
+    join.text = "JOIN LAN MATCH"
+    join.custom_minimum_size = Vector2(190, 58)
+    join_row.add_child(join)
+    join.pressed.connect(_on_join)
+    join_note = Label.new()
+    join_note.text = "To host: run tools/run_server.ps1 on one PC, then both players join its address."
+    join_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    join_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    column.add_child(join_note)
     var note := Label.new()
     note.text = "Prototype: placeholder art, a basic bot, singles only. Doubles and cosmetics are planned."
     note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -42,6 +63,12 @@ func _ready() -> void:
     help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     column.add_child(help)
+
+func _on_join() -> void:
+    if not NetConfig.set_address(address.text):
+        join_note.text = "That is not a valid address. Use an IP or name, optionally with :port."
+        return
+    get_tree().change_scene_to_file("res://scenes/game/online_match.tscn")
 
 func _on_singles() -> void:
     get_tree().change_scene_to_file("res://scenes/game/singles_match.tscn")

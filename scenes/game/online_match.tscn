@@ -1,0 +1,17 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/networking/online_match.gd" id="1_online"]
+[ext_resource type="PackedScene" path="res://scenes/game/match_court.tscn" id="2_court"]
+[ext_resource type="Script" path="res://scripts/networking/net_link.gd" id="3_link"]
+[ext_resource type="Script" path="res://scripts/networking/match_client.gd" id="4_client"]
+
+[node name="NetGame" type="Node"]
+script = ExtResource("1_online")
+
+[node name="MatchCourt" parent="." instance=ExtResource("2_court")]
+
+[node name="NetLink" type="Node" parent="."]
+script = ExtResource("3_link")
+
+[node name="MatchClient" type="Node" parent="."]
+script = ExtResource("4_client")
