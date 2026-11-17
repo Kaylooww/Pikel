@@ -30,6 +30,7 @@ func _run() -> void:
     server.port = PORT
     server.points_to_win = 2
     server.win_by = 1
+    server.match_code = "rally-7" # typed loosely on purpose: the server cleans it to RALLY7
     server.link = server_branch.get_node("NetLink")
     server_branch.add_child(server)
     var listening: Error = server.listen()
@@ -105,6 +106,11 @@ func _run() -> void:
         same_rallies = same_rallies and a_ended[i] == b_ended[i]
     _assert(same_rallies and a_ended.size() == b_ended.size(), "both clients received identical rally results in the same order")
 
+    # A stranger with the wrong code is turned away and told why.
+    _client("D", "ZZZZZZ")
+    await _until(func() -> bool: return failures.has("D"), 5.0)
+    _assert(str(failures.get("D", "")).contains("match code") and server.seats.size() == 2, "a client with the wrong match code is told so and gets no seat")
+
     # A third player is turned away.
     var carol: MatchClient = _client("C")
     await _until(func() -> bool: return failures.has("C"), 5.0)
@@ -115,7 +121,7 @@ func _run() -> void:
     var alice_link: NetLink = alice.get_parent().get_node("NetLink")
     alice_link.submit_input.rpc_id(1, ["not", "an", "input"])
     alice_link.submit_input.rpc_id(1, [alice.match_id + 5, 999999, Vector2(1, 0), true, 1, Vector2.ZERO])
-    alice_link.hello.rpc_id(1, 12345, "")
+    alice_link.hello.rpc_id(1, 12345, "", "")
     await _until(func() -> bool: return server.rejected_inputs >= rejected + 2, 3.0)
     _assert(server.rejected_inputs >= rejected + 2 and server.seats.size() == 2, "malformed and mis-addressed input over the wire is rejected, and a second hello changes nothing")
 
@@ -151,7 +157,7 @@ func _run() -> void:
 
 func _finish() -> void:
     for child: Node in root.get_children():
-        if child.name in ["S", "A", "B", "C"]:
+        if child.name in ["S", "A", "B", "C", "D"]:
             if child.multiplayer.multiplayer_peer != null:
                 child.multiplayer.multiplayer_peer.close()
             child.queue_free()
@@ -173,7 +179,7 @@ func _branch(branch_name: String) -> Node:
     branch.add_child(link)
     return branch
 
-func _client(branch_name: String) -> MatchClient:
+func _client(branch_name: String, code: String = "RALLY7") -> MatchClient:
     var branch: Node = _branch(branch_name)
     var client := MatchClient.new()
     client.tuning = tuning
@@ -184,7 +190,7 @@ func _client(branch_name: String) -> MatchClient:
     client.failed.connect(func(reason: String) -> void: failures[branch_name] = reason)
     notices[branch_name] = []
     client.notice.connect(func(text: String) -> void: notices[branch_name].append(text))
-    var error: Error = client.join("127.0.0.1", PORT)
+    var error: Error = client.join("127.0.0.1", PORT, code)
     if error != OK:
         failures[branch_name] = "join error %d" % error
     return client

@@ -16,7 +16,7 @@ Implemented in `scripts/networking/match_server.gd` and `net_protocol.gd`, with 
 - A dropped player's seat is kept for 20 s and given back only to a connection that shows that seat's ticket: 8 random bytes from `Crypto`, sent in that player's `welcome`. A wrong or expired ticket is treated as a new player.
 - An idle server loses the rally after 15 s (serve clock), so nobody can stall a match by not serving.
 
-Not there yet: no accounts or encryption (ENet traffic is plain, so anyone on the network path can read a seat ticket and take that seat while it is kept), no admin interface, no per-address rate limiting or ban list, no protection against a flood of new connections beyond the four-connection cap. Treat it as a trusted-LAN tool and do not expose the port to the internet.
+A private match code keeps strangers on the same network from taking a seat, but it is short and sent in plain text: it is a door latch, not a lock. Not there yet: no accounts or encryption (ENet traffic is plain, so anyone on the network path can read the match code or a seat ticket), no admin interface, no per-address rate limiting or ban list, no protection against a flood of new connections beyond the four-connection cap. Treat it as a trusted-LAN tool and do not expose the port to the internet.
 
 ## Server security model
 - Client is untrusted for movement, contact, score, currency, rank and match result.

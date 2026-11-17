@@ -167,3 +167,12 @@ Do not describe this project as a fully validated production game.
 - [x] Main menu, training, singles match and online match scenes booted headless for 120 frames: exit 0.
 - [x] Windowed client (run through the Godot MCP bridge, not by a person) joined a `--bot` server; the server process was then killed. The client printed `Connection lost. Trying to reconnect …`, retried for 20 s, then `Lost the connection to the server.` Only the log was read; nobody looked at the screen.
 - [ ] A reconnect over a real dropped Wi-Fi link, and the HUD wording while paused, have not been seen by a human.
+
+## RP-035 (private match codes slice) results recorded 2026-11-17 (same machine and Godot build)
+
+- [x] `tools/validate_project.sh`: all 21 test files pass. Changed counts: net protocol 38, match server 43, LAN match 34 (a client with the wrong code is refused over real sockets).
+- [x] `tools/lan_smoke_test.sh` (final `0-3`) and `tools/lan_smoke_test.ps1` (final `3-2`) with `--code=SNEAK7`: server and both clients agreed, 0 rejected inputs. The first attempt used `SMOKE7`, which contains an excluded "O"; the server silently made up another code and both clients were refused. The server now prints a warning for an invalid `--code`.
+- [x] Main menu, training, singles match and online match scenes booted headless for 120 frames: exit 0.
+- [x] Windowed client (run through the Godot MCP bridge) joined a server started with `--code=TEST42` without a code and printed `Wrong match code. Ask the host for the code their server printed.` Only the log was read.
+- [ ] Nobody has typed a code into the main menu's new field or looked at the reworked join row on screen.
+- [ ] Public server deployment is not built; it waits for approval.

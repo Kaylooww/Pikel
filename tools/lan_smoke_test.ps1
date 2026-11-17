@@ -13,11 +13,11 @@ function Start-Game([string]$name, [string[]]$gameArgs) {
         -RedirectStandardOutput (Join-Path $logs "$name.log") -RedirectStandardError (Join-Path $logs "$name.err")
 }
 
-$server = Start-Game "server" @("res://scenes/server/match_server.tscn", "--", "--port=$Port", "--points=3", "--win-by=1", "--exit-on-match-end")
+$server = Start-Game "server" @("res://scenes/server/match_server.tscn", "--", "--port=$Port", "--points=3", "--win-by=1", "--code=SNEAK7", "--exit-on-match-end")
 Start-Sleep -Seconds 2
-$homeClient = Start-Game "home" @("res://scenes/game/online_match.tscn", "--", "--join=127.0.0.1:$Port", "--autoplay", "--exit-on-match-end", "--seed=7")
+$homeClient = Start-Game "home" @("res://scenes/game/online_match.tscn", "--", "--join=127.0.0.1:$Port", "--code=SNEAK7", "--autoplay", "--exit-on-match-end", "--seed=7")
 Start-Sleep -Seconds 1
-$awayClient = Start-Game "away" @("res://scenes/game/online_match.tscn", "--", "--join=127.0.0.1:$Port", "--autoplay", "--exit-on-match-end", "--seed=8")
+$awayClient = Start-Game "away" @("res://scenes/game/online_match.tscn", "--", "--join=127.0.0.1:$Port", "--code=SNEAK7", "--autoplay", "--exit-on-match-end", "--seed=8")
 
 $all = @($server, $homeClient, $awayClient)
 $deadline = (Get-Date).AddMinutes(10)

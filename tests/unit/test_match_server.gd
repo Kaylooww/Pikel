@@ -196,6 +196,19 @@ func _initialize() -> void:
         solo.tick()
     _assert(solo.sim != null and not solo.sim.is_over() and solo.match_id == first_id + 1 and solo.sim.tick < 5, "ten seconds later a rematch starts with a new match id")
 
+    # Private match code (RP-035).
+    var private: MatchServer = _server()
+    private.match_code = "K7QX2M"
+    private.on_hello(ALICE, NetProtocol.VERSION, "", "WRONG1")
+    private.on_hello(BOB, NetProtocol.VERSION)
+    _assert(private.seats.is_empty(), "without the match code, or with a wrong one, nobody is seated")
+    private.on_hello(ALICE, NetProtocol.VERSION, "", "K7QX2M")
+    _assert(private.seats == {ALICE: 1}, "the right code gets a seat")
+    var reticket: String = private._tokens[1]
+    private.on_hello(CAROL, NetProtocol.VERSION, reticket, "WRONG1")
+    _assert(private.seats == {ALICE: 1}, "even a valid seat ticket needs the match code")
+    private.free()
+
     # Serve clock: an idle server cannot stall the match.
     var idle: MatchServer = _server()
     idle.on_hello(ALICE, NetProtocol.VERSION)
