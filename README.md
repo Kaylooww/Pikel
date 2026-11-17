@@ -35,8 +35,8 @@
 | Live rally adjudication | The practice rally is judged by `RallyState` through `RallyController`: your first hit is the serve, the return must bounce, and the HUD says who won the rally and why; 12 unit and 15 integration checks. **Not yet played by a human** |
 | Serve rules | Server must stand behind the baseline in the correct half; serve must land in the diagonal service court; the preview warns before a faulty serve. Treated as a drop serve: no swing-motion checks. Always the right court until scoring exists |
 | Kitchen rules | Volleying while standing in the kitchen (line included) is a fault, and so is stepping in within 0.6 s after a volley; standing there and hitting bounced balls is allowed; the preview warns. Players are a single ground point, not two feet |
-| Scoring | **Not implemented** |
-| Singles match flow (score, side-out, match end) | **Not implemented** |
+| Scoring | `MatchScore`: singles side-out scoring, serve side from the server's score, win at 11 by 2 with optional cap; `RallyController` scores each rally once and picks the next server; 24 unit checks plus 11 controller checks. **Not shown in the playable scene yet**: practice still has the player serve every ball |
+| Playable singles match (opponent serves, score on HUD, match end screen) | **Not implemented** (RP-025) |
 | Online multiplayer, dedicated server, matchmaking | **Not implemented** |
 | Doubles, cosmetics, model animations | **Not implemented** |
 | Full game-ready character models | **Not supplied**; your team creates them |
