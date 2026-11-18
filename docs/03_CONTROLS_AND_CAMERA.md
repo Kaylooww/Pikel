@@ -12,7 +12,7 @@
 | Esc | Menu | Pause/settings/exit lobby |
 | Space | Not implemented | Lunge/dive |
 | Q / E | Backhand / forehand, pressed with each swing | Handedness setting |
-| C | Switch between training and match camera views | Settings option, not a live-match key |
+| C | Cycle camera views: behind the player (default), match chase, raised training | Settings option, not a live-match key |
 | Mouse wheel | Not implemented | Camera distance |
 | Controller | Not implemented | Post-beta accessibility / Steam Input |
 
@@ -30,7 +30,7 @@ Controls are twelve named actions in `project.godot` (Project Settings > Input M
 6. Distinguish exact cursor target from actual predicted landing when skill error is applied.
 
 ## Production camera
-**Implemented:** `CourtCamera` owns all camera motion and reads a `CameraRig` resource (height, depth, how much it follows the player, look point, field of view, smoothing rate). Smoothing is exponential in time, so it behaves the same at any frame rate. Two rigs ship: the raised training view (unchanged from the prototype) and a lower match chase view that follows the player in depth. Cursor aiming uses whichever camera is active, so the aim point stays under the cursor in both. The remaining bullets below are still to do.
+**Implemented:** `CourtCamera` owns all camera motion and reads a `CameraRig` resource (height, depth, how much it follows the player, look point, field of view, smoothing rate). Smoothing is exponential in time, so it behaves the same at any frame rate. Three rigs ship. The default (`config/camera_chase.tres`) is a low third-person view modelled on the Just Volleyball reference: 5 m up and 6 m behind the player, following them fully, looking 4 m past them (about 27° down), 60° field of view, so the player stands in the lower half and the whole far court is in view. **C** cycles to the older lower match chase view and the raised training view. Cursor aiming uses whichever camera is active; with the low camera a cursor above the horizon aims at the far baseline instead of being ignored. Framing was checked in rendered screenshots (Xvfb + software OpenGL), not on a real display. The remaining bullets below are still to do.
 
 - Third-person raised chase camera, both halves readable.
 - Dynamic follow with configurable smoothing (time-based rather than per-frame lerp).

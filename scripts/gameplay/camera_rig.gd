@@ -9,7 +9,8 @@ class_name CameraRig
 @export var follow_x: float = 0.35 ## fraction of the player's sideways position the camera copies
 @export var follow_z: float = 0.0 ## fraction of the player's depth the camera copies (0 = fixed)
 @export var look_follow_x: float = 0.16 ## fraction of the player's sideways position the aim point copies
-@export var look_z: float = -0.15 ## court z the camera looks at
+@export var look_z: float = -0.15 ## court z the camera looks at (when the player stands on the net line)
+@export var look_follow_z: float = 0.0 ## fraction of the player's depth the aim point copies (0 = fixed)
 @export var fov: float = 58.0
 @export var smoothing_rate: float = 3.7 ## per second; higher catches up faster
 
@@ -17,7 +18,7 @@ func desired_position(player_position: Vector3) -> Vector3:
     return Vector3(player_position.x * follow_x, height, base_z + player_position.z * follow_z)
 
 func look_target(player_position: Vector3) -> Vector3:
-    return Vector3(player_position.x * look_follow_x, 0.0, look_z)
+    return Vector3(player_position.x * look_follow_x, 0.0, look_z + player_position.z * look_follow_z)
 
 ## Fraction of the remaining distance to cover this frame. Exponential, so the motion is the
 ## same at any frame rate (a fixed per-frame lerp is not).
