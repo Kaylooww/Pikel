@@ -119,6 +119,8 @@ func _try_ground_stroke(input: PlayerInput, view: MatchView) -> void:
     var stroke: SwingContact.Stroke = _stroke_for(view, _plan_wrong_side)
     var contact: SwingContact.Contact = SwingContact.evaluate(view.my_position, view.ball_position, view.ball_velocity, side, tuning, stroke)
     if contact.in_reach and (not contact.approaching or contact.seconds_early <= _slip):
+        if _plan == PlayerInput.Swing.DRIVE and not _drive_clears(view, contact):
+            _plan = PlayerInput.Swing.DINK # too low to drive over the net: lift a dink instead
         input.swing = _plan
         input.power = _plan_power
         input.stroke = stroke
@@ -127,6 +129,10 @@ func _try_ground_stroke(input: PlayerInput, view: MatchView) -> void:
             PlayerInput.Swing.LOB: input.aim = _scatter(_lob_target(view), 1.0)
             _: input.aim = _scatter(_rally_target(view), 1.0)
         _at_net = _plan == PlayerInput.Swing.DINK
+
+func _drive_clears(view: MatchView, contact: SwingContact.Contact) -> bool:
+    var recipe: ShotRecipe = ShotRecipe.make(ShotRecipe.Kind.DRIVE, _plan_power, false, tuning).weakened(contact.power)
+    return ShotSolver.solve(view.ball_position, contact.apply(_rally_target(view)), recipe, tuning).ok
 
 func _choose_ground_stroke(view: MatchView) -> void:
     var me_at_net: bool = absf(view.my_position.z) < NET_DEPTH + 1.0

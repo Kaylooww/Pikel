@@ -3,8 +3,9 @@ class_name ShotRecipe
 ## How one shot type flies: its pace, spin, the flight times the solver may use and where it
 ## is allowed to land. Pure: built from the shot type, the charge and the tuning.
 ##
-##   DINK  (left tap)   soft, backspin, floats. Tapped on a ball in the air it is a punched volley.
-##   DRIVE (left hold)  pace and topspin grow with the charge, so hard drives dip.
+##   DINK  (left tap)   a slow, high, floaty arc with backspin, the same hang time from anywhere.
+##                      Tapped on a ball in the air it is a punched volley instead.
+##   DRIVE (left hold)  fast and flat; pace and topspin grow with the charge, so hard drives dip.
 ##   BLOCK (right tap)  soaks up the pace: slow, flat-ish, backspin, and it always lands short.
 ##   LOB   (right hold) height and depth grow with the charge.
 
@@ -32,10 +33,12 @@ static func make(shot: Kind, charge: float, volley: bool, tuning: GameplayTuning
             recipe.speed = lerpf(tuning.drive_min_speed, tuning.drive_max_speed, c)
             recipe.spin = lerpf(tuning.drive_min_spin, tuning.drive_max_spin, c)
             recipe.min_flight_time = tuning.drive_min_flight_time
+            recipe.max_flight_time = tuning.drive_max_flight_time
         Kind.BLOCK:
             recipe.speed = tuning.block_speed
             recipe.spin = tuning.block_spin
             recipe.max_depth = tuning.block_max_depth
+            recipe.max_flight_time = tuning.block_max_flight_time
             recipe.min_flight_time = tuning.drive_min_flight_time # flat: it may be quicker than a dink
         Kind.LOB:
             recipe.flight_time = lerpf(tuning.lob_min_flight_time, tuning.lob_max_flight_time, c)
@@ -49,7 +52,9 @@ static func make(shot: Kind, charge: float, volley: bool, tuning: GameplayTuning
                 recipe.spin = tuning.volley_dink_spin
                 recipe.min_flight_time = tuning.drive_min_flight_time
             else:
-                recipe.speed = tuning.dink_speed
+                recipe.flight_time = tuning.dink_flight_time
+                recipe.min_flight_time = tuning.dink_flight_time
+                recipe.max_flight_time = tuning.dink_max_flight_time
                 recipe.spin = tuning.dink_spin
             recipe.kind = Kind.DINK
     return recipe

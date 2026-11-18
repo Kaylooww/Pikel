@@ -83,6 +83,24 @@ func _initialize() -> void:
     buttons.press_side(ST.FOREHAND, 95.06)
     _assert(dropped.stroke == ST.NONE, "a side pressed after the release does not count")
 
+    # A held drive or lob swings by itself when the ball reaches the ideal contact point.
+    var arriving := SwingContact.Contact.new()
+    arriving.in_reach = true
+    arriving.approaching = true
+    arriving.seconds_early = 0.2
+    buttons.press(B.ALT, 100.0)
+    _assert(buttons.auto_release(100.5, arriving) == null and buttons.holding(), "no swing while the ball is still on its way")
+    arriving.seconds_early = 0.0
+    var auto: SwingButtons.Request = buttons.auto_release(100.6, arriving)
+    _assert(auto != null and auto.swing == SW.LOB and auto.power > 0.5 and not buttons.holding(), "the held lob swings itself at contact with the charge so far")
+    _assert(buttons.release(B.ALT, 100.7) == null, "the later mouse-up does not swing a second time")
+    buttons.press(B.MAIN, 110.0)
+    _assert(buttons.auto_release(110.05, arriving) == null and buttons.holding(), "a press still inside the tap time waits for the release (it may be a dink)")
+    var out_of_reach := SwingContact.Contact.new()
+    out_of_reach.approaching = true
+    _assert(buttons.auto_release(110.5, out_of_reach) == null and buttons.auto_release(110.5, null) == null, "no auto swing at a ball out of reach or with nothing to hit")
+    buttons.cancel()
+
     # Events: the real input actions reach the buttons.
     var fresh := SwingButtons.new(tuning)
     var made: Array = []

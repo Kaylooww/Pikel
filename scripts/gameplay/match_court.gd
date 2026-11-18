@@ -21,6 +21,7 @@ var charge_meter := ChargeMeter.new()
 var buttons: SwingButtons
 var clock: Callable = func() -> float: return Time.get_ticks_usec() / 1000000.0 ## seconds; tests replace it
 var _pending: SwingButtons.Request = null
+var _last_advice: AimAdvice = null
 
 func _ready() -> void:
     # Positions come from the match owner; the models must not move themselves.
@@ -55,6 +56,7 @@ func show_aim(view: MatchView) -> AimAdvice:
     var advice: AimAdvice = AimAdvice.evaluate(view, target_position, tuning, alt, buttons.charge(now))
     preview.show_advice(advice, target_position, view.ball_position, tuning)
     aim_label.text = advice.text
+    _last_advice = advice
     return advice
 
 func show_score(text: String) -> void:
@@ -69,6 +71,8 @@ func take_input(seq: int = 0) -> PlayerInput:
     # Keys are relative to the player's view; the away player looks the other way down the court.
     var move: Vector2 = GameInput.move_vector() * float(my_side)
     var input: PlayerInput = PlayerInput.make(move, Input.is_action_pressed(GameInput.SPRINT), PlayerInput.Swing.NONE, target_position, seq)
+    if _pending == null and _last_advice != null and _last_advice.state == AimAdvice.State.OK:
+        _pending = buttons.auto_release(clock.call(), _last_advice.contact) # a held drive or lob meets the ball
     if _pending != null:
         input.swing = _pending.swing
         input.power = _pending.power

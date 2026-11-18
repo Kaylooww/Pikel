@@ -10,6 +10,8 @@ class_name SwingButtons
 ## seconds before the mouse press until the release. The latest one pressed counts. A swing
 ## with neither is a weaker "no side" swing; an old press from an earlier swing does not carry over.
 ## While one button is held the other is ignored: one swing at a time.
+## A held drive or lob also swings by itself when the ball reaches the ideal contact point
+## (auto_release), so the player charges by pressing early instead of guessing the release.
 
 enum Pad { MAIN, ALT }
 
@@ -48,6 +50,18 @@ func release(button: Pad, now: float) -> Request:
     request.stroke = _stroke_between(_pressed_at - tuning.side_key_window, now)
     _held_button = -1
     return request
+
+## If a drive or lob is being held and the ball has just reached the ideal contact point,
+## swings now with the charge so far. `contact` is the swing judgement for this moment (null
+## when there is nothing to hit). Returns null when it is not time yet.
+func auto_release(now: float, contact: SwingContact.Contact) -> Request:
+    if _held_button == -1 or contact == null or now - _pressed_at < tuning.tap_threshold:
+        return null
+    if not (contact.in_reach and contact.approaching and contact.seconds_early <= AUTO_SWING_LEAD):
+        return null
+    return release(_held_button as Pad, now)
+
+const AUTO_SWING_LEAD: float = 1.0 / 60.0 ## one tick: the swing lands on the ideal contact point
 
 ## Q or E was pressed at `now`.
 func press_side(stroke: SwingContact.Stroke, now: float) -> void:

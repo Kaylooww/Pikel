@@ -11,7 +11,8 @@ func _initialize() -> void:
     _assert(shipped is GameplayTuning, "config/gameplay_tuning.tres is a GameplayTuning")
     var t: GameplayTuning = shipped
     _assert(t.gravity > 0.0, "gravity is positive")
-    _assert(t.drive_max_speed > t.drive_min_speed and t.drive_min_speed > t.dink_speed and t.dink_speed > t.block_speed and t.block_speed > 0.0, "drive is faster than dink, dink than block")
+    _assert(t.drive_max_speed > t.drive_min_speed and t.drive_min_speed > t.volley_dink_speed and t.volley_dink_speed > t.block_speed and t.block_speed > 0.0, "drive is faster than a volley dink, which is faster than a block")
+    _assert(t.dink_flight_time > t.drive_max_flight_time and t.lob_min_flight_time > t.dink_max_flight_time, "a dink hangs longer than any drive, a lob longer than any dink")
     _assert(t.drive_min_spin > 0.0 and t.dink_spin < 0.0 and t.block_spin < 0.0, "drives carry topspin, dinks and blocks backspin")
     _assert(t.lob_max_flight_time > t.lob_min_flight_time and t.lob_min_flight_time > t.max_flight_time, "lobs fly longer (higher) than any other shot")
     _assert(t.air_drag > 0.0 and t.spin_lift > 0.0, "drag and spin are on")
@@ -61,9 +62,11 @@ func _initialize() -> void:
     custom.gravity = 9.81 # a real arc; with zero gravity no shot can clear the net
     custom.max_flight_time = 10.0
     custom.drive_min_flight_time = 0.0
+    custom.drive_max_flight_time = 10.0
     custom.drive_min_speed = 10.0
     custom.drive_max_speed = 20.0
-    custom.dink_speed = 5.0
+    custom.dink_flight_time = 2.0
+    custom.dink_max_flight_time = 3.0
     custom.min_flight_time = 0.0
     ball.reset_ball(Vector3(0, 1.0, 5.0))
     ball.launch(Vector3(0, 0, -5.0), ShotRecipe.make(ShotRecipe.Kind.DRIVE, 0.0, false, custom))
@@ -73,7 +76,7 @@ func _initialize() -> void:
     _assert(is_equal_approx(ball.ball_velocity.z, -20.0), "a full drive uses drive_max_speed")
     ball.reset_ball(Vector3(0, 1.0, 5.0))
     ball.launch(Vector3(0, 0, -5.0), ShotRecipe.make(ShotRecipe.Kind.DINK, 0.0, false, custom))
-    _assert(is_equal_approx(ball.ball_velocity.z, -5.0), "dink uses dink_speed")
+    _assert(is_equal_approx(ball.ball_velocity.z, -5.0), "a dink takes dink_flight_time whatever the distance")
     ball.free()
 
     if errors.is_empty():

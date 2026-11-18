@@ -93,6 +93,11 @@ func _physics_process(_delta: float) -> void:
         if inside and not in_kitchen.get(who, false):
             referee.kitchen_entry(1 if who == player else -1, who.position)
         in_kitchen[who] = inside
+    # A held drive or lob swings by itself when the ball reaches the ideal contact point.
+    if not resetting and referee.rally.last_hitter != 1 and ball.position.z > 0.0 and not _must_bounce_first() and not _kitchen_volley():
+        var auto: SwingButtons.Request = buttons.auto_release(clock.call(), _contact(SwingContact.Stroke.FOREHAND))
+        if auto != null:
+            _attempt_hit(auto)
 
 func _process(_delta: float) -> void:
     target_position = CourtAim.target_from_mouse(camera, get_viewport().get_mouse_position(), 1, target_position)

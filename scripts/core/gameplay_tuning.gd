@@ -6,12 +6,12 @@ class_name GameplayTuning
 ## Court sizes are NOT tuning: they live in CourtDimensions.
 
 @export_group("Ball flight")
-@export var gravity: float = 9.81
+@export var gravity: float = 8.0 ## below real 9.81 on purpose: an arcade hang time, so arcs are easy to read
 @export var air_drag: float = 0.45 ## per second; velocity lost to the air is air_drag * velocity (linear drag)
 @export var spin_lift: float = 0.15 ## m/s² of vertical push per rev/s of spin: topspin pushes down, backspin holds up
 @export var min_flight_time: float = 0.58 ## shortest flight a soft shot (dink, block) may use
 @export var max_flight_time: float = 1.15 ## longest arc a dink, block or drive may use to clear the net
-@export var max_launch_speed: float = 25.0 ## shots needing more than this are refused
+@export var max_launch_speed: float = 30.0 ## shots needing more than this are refused
 
 @export_group("Bounce")
 @export_range(0.0, 1.0) var bounce_restitution: float = 0.68 ## vertical speed kept after a bounce
@@ -21,26 +21,29 @@ class_name GameplayTuning
 @export_range(0.0, 1.0) var bounce_spin_keep: float = 0.4 ## share of spin the ball keeps after a bounce
 
 @export_group("Dink (left tap)")
-@export var dink_speed: float = 6.5 ## horizontal m/s used to pick a dink's flight time
+@export var dink_flight_time: float = 1.4 ## seconds in the air whatever the distance: a slow, floaty arc
+@export var dink_max_flight_time: float = 1.7 ## longest arc it may raise to, to clear the net
 @export var dink_spin: float = -10.0 ## rev/s; negative is backspin, so the dink floats and sits up
 @export var volley_dink_speed: float = 9.0 ## a dink tapped on a ball that has not bounced is a punched volley
 @export var volley_dink_spin: float = -6.0
 
 @export_group("Drive (left hold)")
-@export var drive_min_speed: float = 10.0 ## horizontal m/s at the shortest hold
-@export var drive_max_speed: float = 17.0 ## horizontal m/s at a full charge
+@export var drive_min_speed: float = 13.0 ## horizontal m/s at the shortest hold
+@export var drive_max_speed: float = 22.0 ## horizontal m/s at a full charge
 @export var drive_min_spin: float = 12.0 ## rev/s of topspin at the shortest hold
 @export var drive_max_spin: float = 30.0 ## rev/s of topspin at a full charge, so hard drives dip
-@export var drive_min_flight_time: float = 0.4 ## a full-power drive may be this quick
+@export var drive_min_flight_time: float = 0.3 ## a full-power drive may be this quick
+@export var drive_max_flight_time: float = 0.9 ## a drive never floats longer than this; past it the shot is refused
 
 @export_group("Block (right tap)")
-@export var block_speed: float = 5.0 ## horizontal m/s: a block soaks up the pace and drops short
-@export var block_spin: float = -6.0
+@export var block_speed: float = 6.0 ## horizontal m/s: a block soaks up the pace and drops short
+@export var block_spin: float = -8.0
 @export var block_max_depth: float = 3.6 ## metres past the net a block can reach, whatever the aim
+@export var block_max_flight_time: float = 0.95 ## keeps the block low and flat, under a dink's arc
 
 @export_group("Lob (right hold)")
-@export var lob_min_flight_time: float = 1.6 ## flight time (so height) at the shortest hold
-@export var lob_max_flight_time: float = 2.3 ## at a full charge
+@export var lob_min_flight_time: float = 2.0 ## flight time (so height) at the shortest hold: about 4 m up
+@export var lob_max_flight_time: float = 2.8 ## at a full charge: about 8 m up
 @export var lob_extra_depth: float = 1.6 ## metres a full-charge lob carries past the aim point, kept inside the baseline
 @export var lob_spin: float = 6.0 ## light topspin
 
