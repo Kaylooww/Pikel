@@ -14,8 +14,11 @@ const AIM_IDLE := Color(0.75, 0.78, 0.80, 0.40)
 var marker: MeshInstance3D
 var marker_material: StandardMaterial3D
 var landing_marker: MeshInstance3D
-var drive_preview: TrajectoryPreview
-var dink_preview: TrajectoryPreview
+var hold_preview: TrajectoryPreview ## drive or lob at the current charge
+var tap_preview: TrajectoryPreview ## dink or block
+var buttons: SwingButtons
+var charge_meter := ChargeMeter.new()
+var clock: Callable = func() -> float: return Time.get_ticks_usec() / 1000000.0 ## seconds; tests replace it
 var aim_label: Label
 var shot_label: Label
 var shot_target: Vector3 = Vector3.ZERO ## where the player's last shot was aimed
@@ -42,6 +45,7 @@ func _ready() -> void:
     ball.get_node("Visual").material_override = ball_material
     camera.target = player
     camera.snap()
+    buttons = SwingButtons.new(tuning)
     ball.bounced.connect(_on_ball_bounced)
     ball.net_hit.connect(_on_ball_net_hit)
     referee.rally_ended.connect(_on_rally_ended)
@@ -72,12 +76,12 @@ func _ready() -> void:
     landing_marker.mesh = landing_mesh
     landing_marker.visible = false
     add_child(landing_marker)
-    drive_preview = TrajectoryPreview.new()
-    drive_preview.set_color(Color("ffe06b"))
-    add_child(drive_preview)
-    dink_preview = TrajectoryPreview.new()
-    dink_preview.set_color(Color("55d5cb"))
-    add_child(dink_preview)
+    hold_preview = TrajectoryPreview.new()
+    hold_preview.set_color(Color("ffe06b"))
+    add_child(hold_preview)
+    tap_preview = TrajectoryPreview.new()
+    tap_preview.set_color(Color("55d5cb"))
+    add_child(tap_preview)
     CourtScenery.add_environment(self)
     _make_hud()
     _set_status("Aim on the OPPOSITE court; click while the ball is within reach.")
@@ -93,13 +97,15 @@ func _physics_process(_delta: float) -> void:
 func _process(_delta: float) -> void:
     target_position = CourtAim.target_from_mouse(camera, get_viewport().get_mouse_position(), 1, target_position)
     marker.position = Vector3(target_position.x, 0.10, target_position.z)
+    var now: float = clock.call()
+    charge_meter.show_charge(buttons.pending_swing(now), buttons.charge(now), buttons.pending_stroke(now))
     _update_aim_preview()
     if ball.moving and not resetting:
         var want: Vector3 = Vector3(clampf(ball.position.x, -2.9, 2.9), 0, -4.8)
         bot.ai_direction = (want - bot.position).normalized() if ball.position.z < 1.0 else (Vector3(0, 0, -5.1) - bot.position).normalized()
         if bot_should_return and ball.position.z < -0.2 and ball.position.distance_to(bot.position + Vector3.UP * tuning.bot_contact_height) < tuning.bot_reach:
             bot_should_return = false
-            if ball.launch(Vector3(clampf(player.position.x, -2.4, 2.4), 0.0, 4.55), false).ok:
+            if ball.launch(Vector3(clampf(player.position.x, -2.4, 2.4), 0.0, 4.55), ShotRecipe.make(ShotRecipe.Kind.DRIVE, 0.3, false, tuning)).ok:
                 referee.hit(-1, ball.position, bot.position)
                 bot_hits += 1
                 _update_score()
@@ -116,51 +122,61 @@ func _unhandled_input(event: InputEvent) -> void:
         _set_status("Camera view changed.")
     elif event.is_action_pressed(GameInput.MENU_BACK):
         get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
-    elif not resetting:
-        if event.is_action_pressed(GameInput.SHOT_DRIVE):
-            _attempt_hit(false)
-        elif event.is_action_pressed(GameInput.SHOT_DINK):
-            _attempt_hit(true)
+    else:
+        SwingInput.handle(buttons, event, clock.call(), func(request: SwingButtons.Request) -> void:
+            if not resetting:
+                _attempt_hit(request))
 
 ## Shows what a click would do right now: the arc of each shot type that the solver accepts,
 ## and a marker colour plus text for accepted / refused / out of reach.
 func _update_aim_preview() -> void:
     if resetting or not _ball_in_reach():
-        drive_preview.show_points(PackedVector3Array())
-        dink_preview.show_points(PackedVector3Array())
+        hold_preview.show_points(PackedVector3Array())
+        tap_preview.show_points(PackedVector3Array())
         marker_material.albedo_color = AIM_IDLE
         aim_label.text = "AIM  —  ball not in reach"
         return
     if _must_bounce_first() or _kitchen_volley():
-        drive_preview.show_points(PackedVector3Array())
-        dink_preview.show_points(PackedVector3Array())
+        hold_preview.show_points(PackedVector3Array())
+        tap_preview.show_points(PackedVector3Array())
         marker_material.albedo_color = AIM_BLOCKED
         aim_label.text = "WAIT  —  let the return bounce first (two-bounce rule)" if _must_bounce_first() else "KITCHEN  —  no volleys here: let it bounce or step back"
         return
     # The arcs use the real target, so a mistimed or stretched swing visibly drifts off the marker.
-    var contact: SwingContact.Contact = _contact()
+    var needed: SwingContact.Stroke = SwingContact.needed_stroke(player.position, ball.position, 1, tuning)
+    var contact: SwingContact.Contact = _contact(needed if needed != SwingContact.Stroke.NONE else SwingContact.Stroke.FOREHAND)
     var real_target: Vector3 = contact.apply(target_position)
-    var drive_ok: bool = _preview_shot(drive_preview, real_target, false)
-    var dink_ok: bool = _preview_shot(dink_preview, real_target, true)
+    var now: float = clock.call()
+    var alt: bool = buttons.held_button() == SwingButtons.Pad.ALT
+    var volley: bool = _volley()
+    var tap_kind: ShotRecipe.Kind = ShotRecipe.Kind.BLOCK if alt else ShotRecipe.Kind.DINK
+    var hold_kind: ShotRecipe.Kind = ShotRecipe.Kind.LOB if alt else ShotRecipe.Kind.DRIVE
+    var hold_ok: bool = _preview_shot(hold_preview, real_target, ShotRecipe.make(hold_kind, buttons.charge(now), volley, tuning))
+    var tap_ok: bool = _preview_shot(tap_preview, real_target, ShotRecipe.make(tap_kind, 0.0, volley, tuning))
     var serve_problem: String = _serve_problem(real_target)
-    marker_material.albedo_color = AIM_OK if (drive_ok or dink_ok) and serve_problem == "" else AIM_BLOCKED
-    if (drive_ok or dink_ok) and serve_problem != "":
+    var label: String = "%s  —  contact: %s" % [AimAdvice._side_hint(needed).trim_suffix("  —"), contact.label()]
+    marker_material.albedo_color = AIM_OK if (hold_ok or tap_ok) and serve_problem == "" else AIM_BLOCKED
+    if (hold_ok or tap_ok) and serve_problem != "":
         aim_label.text = "SERVE FAULT IF HIT  —  %s" % serve_problem
-    elif drive_ok and dink_ok:
-        aim_label.text = "AIM OK  —  contact: %s  —  yellow dots: drive   aqua dots: dink" % contact.label()
-    elif drive_ok or dink_ok:
-        aim_label.text = "AIM OK  —  contact: %s  —  only the %s clears the net from here" % [contact.label(), "drive" if drive_ok else "dink"]
+    elif hold_ok and tap_ok:
+        aim_label.text = "AIM OK  —  %s  —  yellow dots: %s   aqua dots: %s" % [label, ShotRecipe.kind_name(hold_kind).to_lower(), ShotRecipe.kind_name(tap_kind).to_lower()]
+    elif hold_ok or tap_ok:
+        aim_label.text = "AIM OK  —  %s  —  only the %s clears the net from here" % [label, ShotRecipe.kind_name(hold_kind if hold_ok else tap_kind).to_lower()]
     else:
-        aim_label.text = "AIM BLOCKED  —  contact: %s  —  no shot lands in from here" % contact.label()
+        aim_label.text = "AIM BLOCKED  —  %s  —  no shot lands in from here" % label
 
-func _preview_shot(view: TrajectoryPreview, real_target: Vector3, soft: bool) -> bool:
-    var shot: ShotSolver.Solution = ShotSolver.solve(ball.position, real_target, soft, tuning)
-    view.show_points(ShotSolver.sample_arc(ball.position, shot, tuning.gravity))
+func _preview_shot(view: TrajectoryPreview, real_target: Vector3, recipe: ShotRecipe) -> bool:
+    var shot: ShotSolver.Solution = ShotSolver.solve(ball.position, real_target, recipe, tuning)
+    view.show_points(ShotSolver.sample_arc(ball.position, shot, tuning))
     return shot.ok
 
-## Reach and timing of a swing made right now.
-func _contact() -> SwingContact.Contact:
-    return SwingContact.evaluate(player.position, ball.position, ball.ball_velocity, 1, tuning)
+## Reach, timing and side of a swing made right now.
+func _contact(stroke: SwingContact.Stroke, volley_window: float = 0.0) -> SwingContact.Contact:
+    return SwingContact.evaluate(player.position, ball.position, ball.ball_velocity, 1, tuning, stroke, volley_window)
+
+## True while the ball in play has not bounced since the opponent hit it.
+func _volley() -> bool:
+    return MatchSimulation.is_volley(referee.rally)
 
 ## Why a serve hit right now would be a fault, or "" if it is legal or this is not a serve.
 func _serve_problem(real_target: Vector3) -> String:
@@ -183,9 +199,9 @@ func _kitchen_volley() -> bool:
     return rally.phase == RallyState.Phase.OPEN_RALLY and rally.last_hitter == -1 and rally.bounces_since_hit == 0 and CourtDimensions.inside_kitchen(player.position)
 
 func _ball_in_reach() -> bool:
-    return ball.position.z > 0.0 and _contact().in_reach
+    return ball.position.z > 0.0 and _contact(SwingContact.Stroke.FOREHAND).in_reach
 
-func _attempt_hit(soft: bool) -> void:
+func _attempt_hit(request: SwingButtons.Request) -> void:
     if not RulesEngine.is_cross_court_target(target_position, 1):
         _set_status("Aim at the opponent's side.")
         return
@@ -194,11 +210,17 @@ func _attempt_hit(soft: bool) -> void:
         return
     if referee.rally.last_hitter == 1:
         return # your own shot is still in play; a second click must not count as a second hit
-    var contact: SwingContact.Contact = _contact()
+    var kind: ShotRecipe.Kind = int(request.swing) as ShotRecipe.Kind
+    var volley: bool = _volley()
+    var contact: SwingContact.Contact = _contact(request.stroke, MatchSimulation.volley_window(kind, tuning) if volley else 0.0)
     if not contact.in_reach:
         _set_status("Too far from ball — move closer.")
         return
-    var shot: ShotSolver.Solution = ball.launch(contact.apply(target_position), soft)
+    if contact.whiffed:
+        _set_status(RallyText.swing(MatchSimulation.SwingResult.MISTIMED, kind, contact.label()))
+        return
+    var recipe: ShotRecipe = ShotRecipe.make(kind, request.power, volley, tuning).weakened(contact.power)
+    var shot: ShotSolver.Solution = ball.launch(contact.apply(target_position), recipe)
     if not shot.ok:
         _set_status("%s (contact: %s)" % [_refusal_text(shot.reason), contact.label()])
         return
@@ -207,7 +229,7 @@ func _attempt_hit(soft: bool) -> void:
     landing_marker.visible = false
     player_hits += 1
     _update_score()
-    _set_status("%s  —  %s" % ["DINK" if soft else "DRIVE", contact.label()])
+    _set_status(RallyText.swing(MatchSimulation.SwingResult.HIT, kind, contact.label()))
     referee.hit(1, ball.position, player.position) # may end the rally at once, e.g. a foot fault or volleying the return
 
 func _refusal_text(reason: ShotSolver.Reason) -> String:
@@ -280,12 +302,11 @@ func _make_hud() -> void:
     shot_label.text = "LAST SHOT  —  none yet"
     stack.add_child(shot_label)
     var help := Label.new()
-    help.text = "%s/%s/%s/%s move | %s sprint | Mouse aim | %s drive | %s dink | %s reset | %s camera | %s menu" % [
-        GameInput.label(GameInput.MOVE_FORWARD), GameInput.label(GameInput.MOVE_LEFT), GameInput.label(GameInput.MOVE_BACK),
-        GameInput.label(GameInput.MOVE_RIGHT), GameInput.label(GameInput.SPRINT), GameInput.label(GameInput.SHOT_DRIVE),
-        GameInput.label(GameInput.SHOT_DINK), GameInput.label(GameInput.RESET_BALL), GameInput.label(GameInput.CAMERA_NEXT),
-        GameInput.label(GameInput.MENU_BACK)]
+    help.text = RallyText.controls_hint("%s reset" % GameInput.label(GameInput.RESET_BALL))
+    help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    help.custom_minimum_size = Vector2(600, 0)
     stack.add_child(help)
+    hud.add_child(charge_meter)
     _update_score()
 
 func _update_score() -> void:

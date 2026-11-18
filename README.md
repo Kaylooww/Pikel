@@ -10,7 +10,7 @@
 2. Download Godot 4.7.2 standard build: <https://godotengine.org/download/windows/>.
 3. Launch Godot Project Manager → **Import** → choose this folder's `project.godot` → **Import & Edit**.
 4. Let the editor import the project, then press **F5**. Choose **PLAY SINGLES MATCH (vs bot)** or **PRACTICE COURT**.
-5. Use **WASD** to move, **Shift** to sprint, move the **mouse** to aim, **left click** for a drive, **right click** for a softer dink, **R** to reset, **C** to switch camera view, and **Esc** for the menu.
+5. Use **WASD** to move, **Shift** to sprint, move the **mouse** to aim, **left click** (tap) for a dink or hold for a charged drive, **right click** (tap) for a block or hold for a lob, **Q** (backhand) or **E** (forehand) with each swing, **R** to reset, **C** to switch camera view, and **Esc** for the menu.
 6. Read **[SETUP_WINDOWS_GODOT_CLAUDE.md](SETUP_WINDOWS_GODOT_CLAUDE.md)** and paste **[prompts/MASTER_STARTING_PROMPT.md](prompts/MASTER_STARTING_PROMPT.md)** into Claude Code from this project folder.
 
 ## Play on a LAN (two PCs on the same network)
@@ -30,16 +30,17 @@ This is a trusted-LAN prototype: there are no accounts or passwords, so do not e
 | Court / kitchen / net geometry | Procedural prototype geometry |
 | Local player WASD and Shift | Starter implementation, read through a rebindable input action map (26 unit checks). No settings screen; rebinds are not saved |
 | Cursor projected onto opposite half | Starter implementation |
-| Left-click drive, right-click soft hit | Starter implementation |
-| Swing quality | Reach and timing judged per swing (clean / early / late / stretched); mishits drift by a predictable amount that the preview shows; 22 unit checks. Right-handed forehand only, **feel untested** |
-| Ball flight, gravity, bounce | No drag or spin; exact parabola and exact landing point; needs tuning |
-| Shot solver | Raises the arc to clear the net and refuses impossible shots; 16 unit checks |
+| Hit controls | Left tap dink / left hold drive, right tap block / right hold lob, tap threshold 150 ms (tunable), charge meter while held; Q backhand / E forehand pressed with each swing, wrong side or no side gives a weaker, sprayed shot; 31 tap/hold checks. **Not yet tried with a real mouse** |
+| Swing quality | Reach and timing judged per swing (clean / early / late / stretched); mishits drift by a predictable amount that the preview shows; 22 unit checks. Right-handed (forehand on the right), backhand on the left; volleys have a hard timing window and a mistimed volley misses the ball; 35 unit checks. **Feel untested** |
+| Ball flight, gravity, bounce | Linear air drag and spin (topspin drives dip, backspin dinks and blocks float, lobs arc high) in a closed-form model, so the landing point is still exact; bounce loses speed and is changed by spin. Coefficients are guesses, **not calibrated** |
+| Shot solver | Four shot types from one recipe each (pace, spin, flight times, landing shape); raises the arc to clear the net and refuses impossible shots; 38 unit checks |
 | Net contact | Swept sphere-vs-net test with 11 unit checks; a hit still just ends the rally (no net bounce) |
 | Scripted practice opponent | Very basic demonstration, not a complete AI player |
 | Court bounds/kitchen/serve-box predicates | Frozen and line-exact; 29 unit checks plus seven smoke checks |
 | Gameplay tuning config | `config/gameplay_tuning.tres`; 15 unit checks. Camera values not yet included |
-| Trajectory preview and landing feedback | Dotted arcs for drive and dink from the solver, marker and text for OK / blocked / out of reach, landing dot and miss distance; logic tested headless, **not yet seen on screen** |
+| Trajectory preview and landing feedback | Dotted arcs for the tap shot and the charged shot of the button being held, from the solver, marker and text for OK / blocked / out of reach, landing dot and miss distance; logic tested headless, **not yet seen on screen** |
 | Camera | `CourtCamera` with two data-driven rigs (raised training view, lower match chase view), frame-rate independent smoothing, **C** switches; 18 unit checks. Match view values are untuned and unseen |
+| Volley exchanges | Tapping a dink on a ball in the air volleys it back toward your aim; the other side must time their own tap to keep it going; outside the window the paddle misses. Kitchen and two-bounce rules unchanged. The bot volleys from the kitchen line; 25 checks. **Not yet played by a human** |
 | Rally state machine | `RallyState` consumes `RallyEvent`s: phases from serve to open rally, faults for net, out, own side, double bounce, double hit and two-bounce violations; 31 unit checks |
 | Live rally adjudication | The practice rally is judged by `RallyState` through `RallyController`: your first hit is the serve, the return must bounce, and the HUD says who won the rally and why; 12 unit and 15 integration checks. **Not yet played by a human** |
 | Serve rules | Server must stand behind the baseline in the correct half; serve must land in the diagonal service court; the preview warns before a faulty serve. Treated as a drop serve: no swing-motion checks. Always the right court until scoring exists |

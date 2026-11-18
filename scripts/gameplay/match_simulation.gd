@@ -9,7 +9,7 @@ class_name MatchSimulation
 ## a ball is in or a point is scored is decided here.
 
 signal rally_started(rally: RallyState)
-signal swing_resolved(side: int, result: SwingResult, contact: SwingContact.Contact, soft: bool) ## contact is null when the swing never got as far as judging reach
+signal swing_resolved(side: int, result: SwingResult, contact: SwingContact.Contact, shot: ShotRecipe.Kind) ## contact is null when the swing never got as far as judging reach
 signal ball_bounced(at: Vector3)
 signal rally_ended(rally: RallyState)
 signal match_ended(score: MatchScore)
@@ -23,6 +23,8 @@ enum SwingResult {
     NO_SHOT_NET, ## no allowed arc clears the net
     NO_SHOT_OUT, ## the (error-adjusted) target is not in the opponent's court
     NO_SHOT_TOO_FAST,
+    MISTIMED, ## a volley pressed outside its timing window: the paddle missed the ball
+    RECOVERING, ## still recovering from a missed volley
 }
 
 const TICK_RATE: int = 60
@@ -42,6 +44,7 @@ var pause_ticks: int = 0 ## ticks left before the next rally is set up
 var serve_clock_ticks: int = 0 ## a server who waits this long loses the rally; 0 = no clock (local play)
 var _serve_wait: int = 0
 var _in_kitchen: Dictionary = {1: false, -1: false}
+var _recover_until: Dictionary = {1: 0, -1: 0} ## side -> first tick it may swing again after a whiff
 
 func _init(game_tuning: GameplayTuning, first_server: int = 1, points_to_win: int = 11, win_by: int = 2, point_cap: int = 0) -> void:
     tuning = game_tuning
@@ -128,6 +131,7 @@ func _place_for_serve() -> void:
     _serve_wait = 0
     for side: int in SIDES:
         _in_kitchen[side] = false
+        _recover_until[side] = 0
     rally_started.emit(rally)
 
 func _hand_position(side: int) -> Vector3:
@@ -141,27 +145,47 @@ func _try_swing(side: int, input: PlayerInput) -> void:
     var result: SwingResult = SwingResult.HIT
     var contact: SwingContact.Contact = null
     var rally: RallyState = referee.rally
+    var kind: ShotRecipe.Kind = input.shot_kind()
     if not rally_live() or (rally.phase == RallyState.Phase.WAITING_FOR_SERVE and rally.server_side != side):
         result = SwingResult.NOT_LIVE
     elif rally.last_hitter == side:
         result = SwingResult.ALREADY_HIT
+    elif tick < int(_recover_until[side]):
+        result = SwingResult.RECOVERING
     elif CourtDimensions.side_from_z(ball.position.z) != side:
         result = SwingResult.WRONG_HALF
     elif not RulesEngine.is_cross_court_target(input.aim, side):
         result = SwingResult.NO_SHOT_OUT # the player must aim at the opponent's court; only swing error may miss it
     else:
-        contact = SwingContact.evaluate(positions[side], ball.position, ball.velocity, side, tuning)
+        var volley: bool = is_volley(rally)
+        contact = SwingContact.evaluate(positions[side], ball.position, ball.velocity, side, tuning, input.stroke,
+            volley_window(kind, tuning) if volley else 0.0)
         if not contact.in_reach:
             result = SwingResult.OUT_OF_REACH
+        elif contact.whiffed:
+            result = SwingResult.MISTIMED
+            _recover_until[side] = tick + maxi(1, roundi(tuning.whiff_recovery * TICK_RATE))
         else:
-            var shot: ShotSolver.Solution = ball.launch(contact.apply(input.aim), input.swing == PlayerInput.Swing.DINK, tuning)
+            var recipe: ShotRecipe = ShotRecipe.make(kind, input.power, volley, tuning).weakened(contact.power)
+            var shot: ShotSolver.Solution = ball.launch(contact.apply(input.aim), recipe, tuning)
             match shot.reason:
                 ShotSolver.Reason.NET: result = SwingResult.NO_SHOT_NET
                 ShotSolver.Reason.BAD_TARGET: result = SwingResult.NO_SHOT_OUT
                 ShotSolver.Reason.TOO_FAST: result = SwingResult.NO_SHOT_TOO_FAST
-    swing_resolved.emit(side, result, contact, input.swing == PlayerInput.Swing.DINK)
+    swing_resolved.emit(side, result, contact, kind)
     if result == SwingResult.HIT:
         referee.hit(side, ball.position, positions[side]) # may end the rally at once (foot fault, kitchen, two-bounce)
+
+## True while the ball in play has not bounced since it was last hit, so a swing now is a volley.
+static func is_volley(rally: RallyState) -> bool:
+    return rally.phase != RallyState.Phase.WAITING_FOR_SERVE and rally.last_hitter != 0 and rally.bounces_since_hit == 0
+
+## The hard timing window for volleying with this kind of shot.
+static func volley_window(kind: ShotRecipe.Kind, game_tuning: GameplayTuning) -> float:
+    match kind:
+        ShotRecipe.Kind.DINK: return game_tuning.volley_dink_window
+        ShotRecipe.Kind.BLOCK: return game_tuning.volley_block_window
+        _: return game_tuning.volley_drive_window
 
 func _on_match_ended(final: MatchScore) -> void:
     match_ended.emit(final)

@@ -7,28 +7,34 @@ var checks: int = 0
 
 func _initialize() -> void:
     # Input round trip.
-    var input: PlayerInput = PlayerInput.make(Vector2(0.6, -0.8), true, PlayerInput.Swing.DINK, Vector3(-1.5, 0.0, -4.6), 42)
+    var input: PlayerInput = PlayerInput.make(Vector2(0.6, -0.8), true, PlayerInput.Swing.LOB, Vector3(-1.5, 0.0, -4.6), 42, 0.75, SwingContact.Stroke.BACKHAND)
     var wire: Array = NetProtocol.encode_input(77, input)
     var back: PlayerInput = NetProtocol.decode_input(wire, 77)
-    _assert(back != null and back.seq == 42 and back.move.is_equal_approx(Vector2(0.6, -0.8)) and back.sprint and back.swing == PlayerInput.Swing.DINK, "input survives the round trip")
+    _assert(back != null and back.seq == 42 and back.move.is_equal_approx(Vector2(0.6, -0.8)) and back.sprint and back.swing == PlayerInput.Swing.LOB, "input survives the round trip")
+    _assert(is_equal_approx(back.power, 0.75) and back.stroke == SwingContact.Stroke.BACKHAND, "the swing's charge and Q/E side survive the round trip")
     _assert(back.aim.is_equal_approx(Vector3(-1.5, 0.0, -4.6)), "aim point survives, flattened to the court")
-    _assert(wire.size() == 6, "an input is six values: there is no room for a claimed position, hit or score")
+    _assert(wire.size() == 8, "an input is eight values: there is no room for a claimed position, hit or score")
 
     # Inputs that must be refused or cleaned.
     _assert(NetProtocol.decode_input(wire, 78) == null, "input for another match is refused")
     _assert(NetProtocol.decode_input(null, 77) == null and NetProtocol.decode_input("hi", 77) == null and NetProtocol.decode_input({}, 77) == null, "non-arrays are refused")
     _assert(NetProtocol.decode_input([77, 42, Vector2.ZERO, true, 1], 77) == null, "too few values is refused")
-    _assert(NetProtocol.decode_input([77, 42, Vector2.ZERO, true, 1, Vector2.ZERO, "extra"], 77) == null, "too many values is refused")
-    _assert(NetProtocol.decode_input([77, "42", Vector2.ZERO, true, 1, Vector2.ZERO], 77) == null, "wrong type is refused")
-    _assert(NetProtocol.decode_input([77, 42, Vector3.ZERO, true, 1, Vector2.ZERO], 77) == null, "a Vector3 where a Vector2 belongs is refused")
-    _assert(NetProtocol.decode_input([77, 42, Vector2.ZERO, 1, 1, Vector2.ZERO], 77) == null, "an int where a bool belongs is refused")
-    _assert(NetProtocol.decode_input([77, 0, Vector2.ZERO, false, 0, Vector2.ZERO], 77) == null, "sequence numbers start at 1")
-    _assert(NetProtocol.decode_input([77, 42, Vector2.ZERO, false, 3, Vector2.ZERO], 77) == null and NetProtocol.decode_input([77, 42, Vector2.ZERO, false, -1, Vector2.ZERO], 77) == null, "unknown swing types are refused")
-    _assert(NetProtocol.decode_input([77, 42, Vector2(NAN, 0), false, 0, Vector2.ZERO], 77) == null, "NaN movement is refused")
-    _assert(NetProtocol.decode_input([77, 42, Vector2.ZERO, false, 1, Vector2(INF, 0)], 77) == null, "infinite aim is refused")
-    var fast: PlayerInput = NetProtocol.decode_input([77, 42, Vector2(500, -500), true, 0, Vector2.ZERO], 77)
+    _assert(NetProtocol.decode_input([77, 42, Vector2.ZERO, true, 1, Vector2.ZERO, 0.0, 0, "extra"], 77) == null, "too many values is refused")
+    _assert(NetProtocol.decode_input([77, "42", Vector2.ZERO, true, 1, Vector2.ZERO, 0.0, 0], 77) == null, "wrong type is refused")
+    _assert(NetProtocol.decode_input([77, 42, Vector3.ZERO, true, 1, Vector2.ZERO, 0.0, 0], 77) == null, "a Vector3 where a Vector2 belongs is refused")
+    _assert(NetProtocol.decode_input([77, 42, Vector2.ZERO, 1, 1, Vector2.ZERO, 0.0, 0], 77) == null, "an int where a bool belongs is refused")
+    _assert(NetProtocol.decode_input([77, 0, Vector2.ZERO, false, 0, Vector2.ZERO, 0.0, 0], 77) == null, "sequence numbers start at 1")
+    _assert(NetProtocol.decode_input([77, 42, Vector2.ZERO, false, 5, Vector2.ZERO, 0.0, 0], 77) == null and NetProtocol.decode_input([77, 42, Vector2.ZERO, false, -1, Vector2.ZERO, 0.0, 0], 77) == null, "unknown swing types are refused")
+    _assert(NetProtocol.decode_input([77, 42, Vector2(NAN, 0), false, 0, Vector2.ZERO, 0.0, 0], 77) == null, "NaN movement is refused")
+    _assert(NetProtocol.decode_input([77, 42, Vector2.ZERO, false, 1, Vector2(INF, 0), 0.0, 0], 77) == null, "infinite aim is refused")
+    _assert(NetProtocol.decode_input([77, 42, Vector2.ZERO, false, 4, Vector2.ZERO, 0.0, 0], 77) != null, "all four shot types are accepted")
+    _assert(NetProtocol.decode_input([77, 42, Vector2.ZERO, false, 1, Vector2.ZERO, NAN, 0], 77) == null, "a NaN charge is refused")
+    _assert(NetProtocol.decode_input([77, 42, Vector2.ZERO, false, 1, Vector2.ZERO, 0.5, 3], 77) == null and NetProtocol.decode_input([77, 42, Vector2.ZERO, false, 1, Vector2.ZERO, 0.5, -1], 77) == null, "an unknown Q/E side is refused")
+    var overcharged: PlayerInput = NetProtocol.decode_input([77, 42, Vector2.ZERO, false, 1, Vector2.ZERO, 7.0, 1], 77)
+    _assert(overcharged != null and overcharged.power == 1.0, "a charge above full is clamped")
+    var fast: PlayerInput = NetProtocol.decode_input([77, 42, Vector2(500, -500), true, 0, Vector2.ZERO, 0.0, 0], 77)
     _assert(fast != null and is_equal_approx(fast.move.length(), 1.0), "an oversized move vector is cut to length 1")
-    var far: PlayerInput = NetProtocol.decode_input([77, 42, Vector2.ZERO, false, 1, Vector2(9999, -9999)], 77)
+    var far: PlayerInput = NetProtocol.decode_input([77, 42, Vector2.ZERO, false, 1, Vector2(9999, -9999), 0.0, 0], 77)
     _assert(far != null and far.aim == Vector3(NetProtocol.AIM_LIMIT, 0.0, -NetProtocol.AIM_LIMIT), "a far-away aim point is clamped")
 
     # Snapshot round trip from a real simulation.
@@ -37,7 +43,7 @@ func _initialize() -> void:
     sim.step({})
     var snap: NetSnapshot = NetProtocol.decode_snapshot(NetProtocol.encode_snapshot(sim, 77, 9))
     _assert(snap != null and snap.match_id == 77 and snap.tick == 2 and snap.ack_seq == 9, "snapshot header survives")
-    _assert(snap.home_position == sim.positions[1] and snap.away_position == sim.positions[-1] and snap.ball_position == sim.ball.position and snap.ball_velocity == sim.ball.velocity and snap.ball_moving, "positions and ball survive exactly")
+    _assert(snap.home_position == sim.positions[1] and snap.away_position == sim.positions[-1] and snap.ball_position == sim.ball.position and snap.ball_velocity == sim.ball.velocity and snap.ball_moving and is_equal_approx(snap.ball_spin, sim.ball.spin) and snap.ball_spin > 0.0, "positions and ball, spin included, survive exactly")
     _assert(snap.phase == RallyState.Phase.SERVE_IN_FLIGHT and snap.last_hitter == 1 and snap.server_side == 1 and snap.serve_from_right and snap.live and snap.winner_side == 0 and snap.rally_id == 1, "rally state survives")
     _assert(snap.position_of(1) == snap.home_position and snap.position_of(-1) == snap.away_position, "position_of picks the side")
     var view: MatchView = snap.to_view(-1, Vector3(9, 0, -9))
@@ -52,7 +58,7 @@ func _initialize() -> void:
     broken[5] = Vector3(NAN, 0, 0)
     _assert(NetProtocol.decode_snapshot(broken) == null, "a snapshot with a NaN position is refused")
     broken = good.duplicate()
-    broken[13] = 99
+    broken[14] = 99
     _assert(NetProtocol.decode_snapshot(broken) == null, "a snapshot with an unknown rally phase is refused")
     broken = good.duplicate()
     broken[1] = 2.5
@@ -73,7 +79,7 @@ func _initialize() -> void:
     # Events.
     var ended: Dictionary = NetProtocol.decode_event(NetProtocol.encode_event(5, 77, E.RALLY_ENDED, [3, int(RallyState.Fault.NET), 1, -1, true, 2, 4]))
     _assert(ended["id"] == 5 and ended["match_id"] == 77 and ended["type"] == E.RALLY_ENDED and ended["payload"] == [3, int(RallyState.Fault.NET), 1, -1, true, 2, 4], "rally-ended event survives")
-    _assert(NetProtocol.decode_event(NetProtocol.encode_event(6, 77, E.SWING, [1, 0, false, "CLEAN"]))["payload"][3] == "CLEAN", "swing event survives")
+    _assert(NetProtocol.decode_event(NetProtocol.encode_event(6, 77, E.SWING, [1, 0, int(ShotRecipe.Kind.LOB), "CLEAN"]))["payload"][3] == "CLEAN", "swing event survives")
     _assert(not NetProtocol.decode_event(NetProtocol.encode_event(7, 77, E.MATCH_ENDED, [1, 11, 7])).is_empty() and not NetProtocol.decode_event(NetProtocol.encode_event(8, 77, E.RALLY_STARTED, [4, -1, false])).is_empty() and not NetProtocol.decode_event(NetProtocol.encode_event(9, 77, E.MATCH_ABORTED, ["left"])).is_empty(), "the other event types survive")
     _assert(NetProtocol.decode_event(NetProtocol.encode_event(10, 77, E.OPPONENT_AWAY, [20]))["payload"] == [20] and not NetProtocol.decode_event(NetProtocol.encode_event(11, 77, E.OPPONENT_BACK, [])).is_empty() and NetProtocol.decode_event([12, 77, int(E.OPPONENT_AWAY), "soon"]).is_empty(), "the opponent-away and opponent-back events survive, and a malformed one is refused")
     _assert(NetProtocol.decode_event([5, 77, int(E.RALLY_ENDED), 3, 1]).is_empty(), "an event with a short payload is refused")

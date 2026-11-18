@@ -45,10 +45,10 @@ func _show() -> void:
     var score: MatchScore = sim.score()
     court.show_score(RallyText.score_line(score.score_of(1), score.score_of(-1), score.server_side, score.serve_from_right(), 1))
 
-func _on_swing_resolved(side: int, result: MatchSimulation.SwingResult, contact: SwingContact.Contact, soft: bool) -> void:
+func _on_swing_resolved(side: int, result: MatchSimulation.SwingResult, contact: SwingContact.Contact, shot: ShotRecipe.Kind) -> void:
     if side != 1:
         return
-    court.show_status(RallyText.swing(result, soft, contact.label() if contact != null else ""))
+    court.show_status(RallyText.swing(result, shot, contact.label() if contact != null else ""))
     if result == MatchSimulation.SwingResult.HIT:
         _awaiting_landing = true
         court.preview.hide_landing()

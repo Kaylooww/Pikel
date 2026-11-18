@@ -124,7 +124,7 @@ func _initialize() -> void:
 
 func _new_sim() -> MatchSimulation:
     var sim := MatchSimulation.new(tuning)
-    sim.swing_resolved.connect(func(side: int, result: MatchSimulation.SwingResult, _contact: SwingContact.Contact, _soft: bool) -> void: swings.append([side, result]))
+    sim.swing_resolved.connect(func(side: int, result: MatchSimulation.SwingResult, _contact: SwingContact.Contact, _shot: ShotRecipe.Kind) -> void: swings.append([side, result]))
     sim.rally_ended.connect(func(rally: RallyState) -> void: ended.append(rally))
     sim.rally_started.connect(func(_rally: RallyState) -> void: started += 1)
     sim.match_ended.connect(func(final: MatchScore) -> void: finals.append(final))

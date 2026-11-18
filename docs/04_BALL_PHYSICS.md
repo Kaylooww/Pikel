@@ -8,7 +8,10 @@ The starter integrates gravity and a simple ballistic shot toward the cursor tar
 - `ball_controller.gd` integrates the exact constant-gravity step, so the flown path is the same parabola the solver used, and it backs the ball up to the moment of floor contact so in/out is judged on the true landing point. In tests the ball lands within 2 cm of the solved target.
 - `ShotSolver.sample_arc` gives evenly timed points along a solved shot. `scripts/physics/trajectory_preview.gd` draws them as dots and decides nothing. The training scene previews what a click would do right now, for both shot types, and reports where the last shot landed against where it was aimed.
 - Contact reach, timing windows and the resulting aim error are in `scripts/gameplay/swing_contact.gd` (see doc 03).
-- Not yet: drag, spin, contact height chosen by the player.
+- Drag and spin (implemented): `scripts/physics/ball_flight.gd` (`BallFlight`) uses a = g_spin − k·v, linear air drag `air_drag` (0.45 /s) plus a vertical Magnus push `spin_lift` (0.15 m/s² per rev/s): topspin adds to gravity, backspin takes some away. Because the model is linear it has an exact closed form, so the ball is stepped exactly and `ShotSolver` inverts it exactly: a solved shot still lands within 2 cm of its target at any tick rate. Shortcut: real drag is quadratic and real Magnus force follows the velocity; both are folded into constants that still need calibrating.
+- Shot types (implemented): `scripts/physics/shot_recipe.gd` (`ShotRecipe`) gives each type its pace, spin and flight times. Dink 6.5 m/s with 10 rev/s backspin (a volley dink is a 9 m/s punch); drive 10 to 17 m/s and 12 to 30 rev/s topspin by charge; block 5 m/s with backspin and never lands more than `block_max_depth` past the net; lob 1.6 to 2.3 s of flight by charge (so 3 to 6 m high), carrying up to `lob_extra_depth` past the aim but inside the baseline. A wrong-side or no-side swing uses a weakened recipe.
+- Bounce (implemented): vertical speed keeps `bounce_restitution`, horizontal keeps `bounce_friction`, then spin adds `bounce_spin_kick` per rev/s along the direction of travel (topspin skids on, backspin checks up, never backwards) and changes the height slightly (`bounce_spin_height`). The ball keeps `bounce_spin_keep` of its spin.
+- Not yet: contact height chosen by the player, a net-cord rebound.
 
 ## Model
 Use position `p`, velocity `v`, spin `omega`, fixed step `dt`. Candidate acceleration:
@@ -41,8 +44,8 @@ At minimum resolve vertical coefficient of restitution, surface friction and spi
 | Parameter | Suggested initial direction | Validation |
 |---|---|---|
 | Gravity | 9.81 m/s² | Time-of-flight repeatability |
-| Drag | Disabled in scaffold | Match measured flight curves |
-| Spin | Disabled in scaffold | Predictable curvature and bounce |
+| Drag | Linear, 0.45 /s (guess) | Match measured flight curves |
+| Spin | Vertical Magnus push and spin-dependent bounce (guesses) | Predictable curvature and bounce |
 | Drive speed | Faster/flatter | Net and boundary safety |
 | Dink | Slower/lower | Kitchen landing accuracy |
 | Net collision | Replace approximate crossing check | No fast ball tunneling |

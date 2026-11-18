@@ -2,6 +2,7 @@ extends SceneTree
 ## Run with: godot --headless --path . --script res://tests/unit/test_swing_contact.gd
 ## Reach, timing windows and the error they cause (RP-015).
 const T := SwingContact.Timing
+const ST := SwingContact.Stroke
 var errors: Array[String] = []
 var checks: int = 0
 var tuning := GameplayTuning.new()
@@ -48,9 +49,9 @@ func _initialize() -> void:
 
     # Mirrored for a player on the away half.
     var away := Vector3(0.0, 0.0, -5.0)
-    var away_early: SwingContact.Contact = SwingContact.evaluate(away, Vector3(0.0, 0.95, -5.0 + tuning.contact_lead + 1.0), Vector3(0.0, 0.0, -8.0), -1, tuning)
+    var away_early: SwingContact.Contact = SwingContact.evaluate(away, Vector3(0.0, 0.95, -5.0 + tuning.contact_lead + 1.0), Vector3(0.0, 0.0, -8.0), -1, tuning, ST.FOREHAND)
     _assert(away_early.timing == T.EARLY and away_early.offset.x > 0.0, "away player's early swing is mirrored")
-    var away_far: SwingContact.Contact = SwingContact.evaluate(away, away + Vector3(1.6, 0.95, 0.0), Vector3.ZERO, -1, tuning)
+    var away_far: SwingContact.Contact = SwingContact.evaluate(away, away + Vector3(1.6, 0.95, 0.0), Vector3.ZERO, -1, tuning, ST.BACKHAND)
     _assert(away_far.offset.z < 0.0, "away player's stretched shot also falls toward the net")
 
     # Applying the error.
@@ -62,6 +63,33 @@ func _initialize() -> void:
     var wide: Vector3 = worst.apply(Vector3(-CourtDimensions.HALF_WIDTH + 0.2, 0.0, -4.0))
     _assert(not CourtDimensions.inside_court(wide), "a badly timed shot aimed at the line goes wide")
 
+    # Forehand and backhand (Q/E). Home faces -z, so +x is the right hand side.
+    var right_ball: Vector3 = hand + Vector3(0.8, 0.0, -0.4)
+    var left_ball: Vector3 = hand + Vector3(-0.8, 0.0, -0.4)
+    _assert(SwingContact.needed_stroke(player, right_ball, 1, tuning) == ST.FOREHAND and SwingContact.needed_stroke(player, left_ball, 1, tuning) == ST.BACKHAND, "a ball on the right is a forehand, on the left a backhand")
+    _assert(SwingContact.needed_stroke(player, hand + Vector3(0.1, 0.0, -0.4), 1, tuning) == ST.NONE, "a ball in front of the body takes either side")
+    _assert(SwingContact.needed_stroke(away, away + Vector3(0.8, 0.95, 0.4), -1, tuning) == ST.BACKHAND, "the away player's right hand is -x")
+    var forehand: SwingContact.Contact = SwingContact.evaluate(player, right_ball, Vector3.ZERO, 1, tuning, ST.FOREHAND)
+    var wrong: SwingContact.Contact = SwingContact.evaluate(player, right_ball, Vector3.ZERO, 1, tuning, ST.BACKHAND)
+    var none: SwingContact.Contact = SwingContact.evaluate(player, right_ball, Vector3.ZERO, 1, tuning, ST.NONE)
+    _assert(forehand.is_clean() and forehand.power == 1.0 and forehand.offset == Vector3.ZERO, "the right side is a full, clean shot")
+    _assert(not wrong.is_clean() and wrong.power == tuning.wrong_side_power and wrong.label() == "WRONG SIDE" and wrong.offset.length() > 0.5, "the wrong side is weaker and sprays")
+    _assert(not none.is_clean() and none.power == tuning.no_side_power and none.label() == "NO SIDE", "no side picked is weaker too")
+    _assert(wrong.offset.length() > none.offset.length() and wrong.power < none.power, "the wrong side is worse than no side")
+    var middle: SwingContact.Contact = SwingContact.evaluate(player, hand + Vector3(0.1, 0.0, -0.4), Vector3.ZERO, 1, tuning, ST.BACKHAND)
+    _assert(middle.is_clean(), "either side is fine for a ball in front of the body")
+
+    # Volley windows: outside them the paddle misses the ball completely.
+    var volley_on_time: SwingContact.Contact = SwingContact.evaluate(player, Vector3(0.0, 0.95, plane_z - 0.4), incoming, 1, tuning, ST.FOREHAND, tuning.volley_dink_window)
+    _assert(not volley_on_time.whiffed and volley_on_time.is_clean(), "a volley pressed 0.05 s early connects cleanly")
+    var volley_early: SwingContact.Contact = SwingContact.evaluate(player, Vector3(0.0, 0.95, plane_z - 1.0), incoming, 1, tuning, ST.FOREHAND, tuning.volley_dink_window)
+    _assert(volley_early.whiffed and volley_early.label().begins_with("MISSED"), "a volley dink pressed 0.125 s early misses")
+    var block_early: SwingContact.Contact = SwingContact.evaluate(player, Vector3(0.0, 0.95, plane_z - 1.0), incoming, 1, tuning, ST.FOREHAND, tuning.volley_block_window)
+    _assert(not block_early.whiffed and block_early.timing == T.EARLY, "a block has a wider window and still connects")
+    var volley_late: SwingContact.Contact = SwingContact.evaluate(player, Vector3(0.0, 0.95, plane_z + 1.0), incoming, 1, tuning, ST.FOREHAND, tuning.volley_dink_window)
+    _assert(volley_late.whiffed, "a volley dink pressed 0.125 s late misses")
+    _assert(not early.whiffed, "a ground stroke is never whiffed, only pushed off line")
+
     if errors.is_empty():
         print("PASS: %d swing contact checks" % checks)
         quit(0)
@@ -69,8 +97,10 @@ func _initialize() -> void:
         for error in errors: printerr("FAIL: ", error)
         quit(1)
 
+## Judged with the right side for wherever the ball is (either side in front of the body).
 func _eval(player: Vector3, ball: Vector3, velocity: Vector3) -> SwingContact.Contact:
-    return SwingContact.evaluate(player, ball, velocity, 1, tuning)
+    var needed: SwingContact.Stroke = SwingContact.needed_stroke(player, ball, 1, tuning)
+    return SwingContact.evaluate(player, ball, velocity, 1, tuning, needed if needed != ST.NONE else ST.FOREHAND)
 
 func _assert(condition: bool, desc: String) -> void:
     checks += 1

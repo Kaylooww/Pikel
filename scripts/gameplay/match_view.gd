@@ -9,6 +9,7 @@ var my_position: Vector3 = Vector3.ZERO
 var opponent_position: Vector3 = Vector3.ZERO
 var ball_position: Vector3 = Vector3.ZERO
 var ball_velocity: Vector3 = Vector3.ZERO
+var ball_spin: float = 0.0 ## rev/s, positive is topspin
 var live: bool = false ## a rally is waiting for its serve or being played
 var phase: RallyState.Phase = RallyState.Phase.WAITING_FOR_SERVE
 var server_side: int = 1
@@ -25,6 +26,7 @@ static func from_simulation(sim: MatchSimulation, for_side: int) -> MatchView:
     view.opponent_position = sim.positions[-for_side]
     view.ball_position = sim.ball.position
     view.ball_velocity = sim.ball.velocity
+    view.ball_spin = sim.ball.spin
     view.live = sim.rally_live()
     view.phase = rally.phase
     view.server_side = rally.server_side

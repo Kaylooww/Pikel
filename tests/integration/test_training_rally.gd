@@ -21,9 +21,9 @@ func _run() -> void:
     # Rally 1: serve, opponent returns, player volleys the return -> two-bounce fault.
     _assert(game.referee.rally.phase == P.WAITING_FOR_SERVE, "practice starts waiting for the serve")
     game.target_position = Vector3(0.0, 0.0, -4.5)
-    game._attempt_hit(false)
+    game._attempt_hit(_drive(game))
     _assert(game.referee.rally.phase == P.SERVE_IN_FLIGHT, "first hit is the serve")
-    game._attempt_hit(false)
+    game._attempt_hit(_drive(game))
     _assert(game.referee.rally.phase == P.SERVE_IN_FLIGHT and game.player_hits == 1, "a second click on your own shot is ignored")
     # The opponent can swing in the same frame the serve bounces, so wait for the return itself.
     await _until(func() -> bool: return game.referee.rally.phase == P.RETURN_IN_FLIGHT)
@@ -34,7 +34,7 @@ func _run() -> void:
     game._update_aim_preview()
     _assert(game.aim_label.text.begins_with("WAIT"), "aim label warns to let the return bounce")
     var first: RallyState = game.referee.rally
-    game._attempt_hit(false)
+    game._attempt_hit(_drive(game))
     _assert(first.is_over() and first.fault == F.VOLLEY_BEFORE_BOUNCE and first.fault_side == 1, "volleying the return is a two-bounce fault on the player")
     _assert(game.status_label.text.contains("TWO-BOUNCE") and game.status_label.text.contains("opponent wins"), "status explains the fault")
     _assert(not game.ball.moving, "ball stops when the rally ends")
@@ -50,7 +50,7 @@ func _run() -> void:
     second = game.referee.rally
     await process_frame
     game.target_position = Vector3(0.0, 0.0, -4.5)
-    game._attempt_hit(false)
+    game._attempt_hit(_drive(game))
     await _until(func() -> bool: return second.phase == P.RETURN_IN_FLIGHT)
     game.player.position = Vector3(-3.0, 0.0, 7.0) # step away so the return is not touched
     await _until(func() -> bool: return second.phase == P.OPEN_RALLY)
@@ -64,7 +64,7 @@ func _run() -> void:
     game.player.position = Vector3(0.0, 0.0, 5.0)
     game._reset_ball()
     var third: RallyState = game.referee.rally
-    game.ball.launch(Vector3(-2.9, 0.0, -6.6), false)
+    game.ball.launch(Vector3(-2.9, 0.0, -6.6), ShotRecipe.make(ShotRecipe.Kind.DRIVE, 0.0, false, game.tuning))
     game.ball.ball_velocity.z *= 1.15 # overhit: lands beyond the baseline
     game.referee.hit(1, game.ball.position, game.player.position)
     await _until(func() -> bool: return third.is_over())
@@ -81,7 +81,7 @@ func _run() -> void:
     game.target_position = Vector3(-1.5, 0.0, -4.5)
     game._update_aim_preview()
     _assert(game.aim_label.text.begins_with("SERVE FAULT IF HIT") and game.aim_label.text.contains("baseline"), "preview warns about the serve position")
-    game._attempt_hit(false)
+    game._attempt_hit(_drive(game))
     _assert(fourth.is_over() and fourth.fault == F.SERVE_POSITION and game.status_label.text.contains("FOOT FAULT"), "serving from inside the court is a foot fault")
 
     # Rally 5: a serve straight ahead lands in the wrong service court.
@@ -92,7 +92,7 @@ func _run() -> void:
     game._update_aim_preview()
     _assert(game.aim_label.text.begins_with("SERVE FAULT IF HIT") and game.aim_label.text.contains("diagonal"), "preview warns about the service court")
     _assert(game.marker_material.albedo_color == game.AIM_BLOCKED, "marker shows the serve would be a fault")
-    game._attempt_hit(false)
+    game._attempt_hit(_drive(game))
     _assert(fifth.phase == P.SERVE_IN_FLIGHT, "the serve is still hit")
     await _until(func() -> bool: return fifth.is_over())
     _assert(fifth.fault == F.SERVE_COURT and fifth.fault_side == 1 and game.status_label.text.contains("SERVICE FAULT"), "it is called a service fault when it lands")
@@ -112,7 +112,7 @@ func _run() -> void:
     game.player.position = Vector3(game.ball.position.x, 0.0, 1.5)
     game._update_aim_preview()
     _assert(game.aim_label.text.begins_with("KITCHEN"), "preview warns against volleying in the kitchen")
-    game._attempt_hit(false)
+    game._attempt_hit(_drive(game))
     _assert(seventh.is_over() and seventh.fault == F.KITCHEN_VOLLEY and seventh.fault_side == 1, "volleying in the kitchen is a fault on the player")
     _assert(game.status_label.text.contains("KITCHEN FAULT"), "status names the kitchen fault")
 
@@ -123,7 +123,7 @@ func _run() -> void:
     game.player.position = Vector3(game.ball.position.x - 0.3, 0.0, game.ball.position.z + 0.4)
     await physics_frame
     game.target_position = Vector3(0.0, 0.0, -4.5)
-    game._attempt_hit(false)
+    game._attempt_hit(_drive(game))
     _assert(not eighth.is_over() and eighth.last_hitter == 1, "volley from behind the kitchen line is legal")
     game.player.position = Vector3(game.player.position.x, 0.0, 1.5)
     await physics_frame
@@ -135,7 +135,7 @@ func _run() -> void:
     game._reset_ball()
     var ninth: RallyState = game.referee.rally
     game.target_position = Vector3(-1.5, 0.0, -4.5)
-    game._attempt_hit(false)
+    game._attempt_hit(_drive(game))
     game.player.position = Vector3(0.0, 0.0, 1.0)
     await physics_frame
     await physics_frame
@@ -156,13 +156,13 @@ func _play_to_fourth_shot() -> RallyState:
     var rally: RallyState = game.referee.rally
     await process_frame
     game.target_position = Vector3(-1.5, 0.0, -4.5)
-    game._attempt_hit(false)
+    game._attempt_hit(_drive(game))
     await _until(func() -> bool: return rally.phase == P.OPEN_RALLY or rally.is_over())
     # Stand so the bounced return is exactly at the ideal contact point, then hit it back.
     game.player.position = Vector3(game.ball.position.x - 0.3, 0.0, game.ball.position.z + 0.4)
     await physics_frame
     game.target_position = Vector3(game.bot.position.x, 0.0, -4.5)
-    game._attempt_hit(false)
+    game._attempt_hit(_drive(game))
     await _until(func() -> bool: return (rally.log.size() >= 7 and rally.last_hitter == -1) or rally.is_over())
     return rally
 
@@ -172,6 +172,15 @@ func _until(done: Callable) -> void:
         if done.call():
             return
         await physics_frame
+
+## A drive with the right side picked for where the ball is, as the player would hit it.
+func _drive(game: Node) -> SwingButtons.Request:
+    var request := SwingButtons.Request.new()
+    request.swing = PlayerInput.Swing.DRIVE
+    request.power = 0.3
+    var needed: SwingContact.Stroke = SwingContact.needed_stroke(game.player.position, game.ball.position, 1, game.tuning)
+    request.stroke = needed if needed != SwingContact.Stroke.NONE else SwingContact.Stroke.FOREHAND
+    return request
 
 func _assert(condition: bool, desc: String) -> void:
     checks += 1

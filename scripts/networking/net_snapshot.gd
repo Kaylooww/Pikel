@@ -9,6 +9,7 @@ var home_position: Vector3 = Vector3.ZERO
 var away_position: Vector3 = Vector3.ZERO
 var ball_position: Vector3 = Vector3.ZERO
 var ball_velocity: Vector3 = Vector3.ZERO
+var ball_spin: float = 0.0
 var ball_moving: bool = false
 var home_points: int = 0
 var away_points: int = 0
@@ -32,6 +33,7 @@ func to_view(side: int, my_position: Vector3) -> MatchView:
     view.opponent_position = position_of(-side)
     view.ball_position = ball_position
     view.ball_velocity = ball_velocity
+    view.ball_spin = ball_spin
     view.live = live
     view.phase = phase
     view.server_side = server_side

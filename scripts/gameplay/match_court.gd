@@ -17,7 +17,10 @@ var preview := AimPreview.new()
 var score_label := Label.new()
 var status_label := Label.new()
 var aim_label := Label.new()
-var _pending_swing: PlayerInput.Swing = PlayerInput.Swing.NONE
+var charge_meter := ChargeMeter.new()
+var buttons: SwingButtons
+var clock: Callable = func() -> float: return Time.get_ticks_usec() / 1000000.0 ## seconds; tests replace it
+var _pending: SwingButtons.Request = null
 
 func _ready() -> void:
     # Positions come from the match owner; the models must not move themselves.
@@ -26,6 +29,7 @@ func _ready() -> void:
     var ball_material := StandardMaterial3D.new()
     ball_material.albedo_color = Color("ffe86b")
     ball_node.get_node("Visual").material_override = ball_material
+    buttons = SwingButtons.new(tuning)
     add_child(preview)
     CourtScenery.add_environment(self)
     _make_hud()
@@ -46,7 +50,9 @@ func show_world(home_position: Vector3, away_position: Vector3, ball_position: V
 
 ## Updates the aiming aids and hint line for the local player. Returns the advice shown.
 func show_aim(view: MatchView) -> AimAdvice:
-    var advice: AimAdvice = AimAdvice.evaluate(view, target_position, tuning)
+    var now: float = clock.call()
+    var alt: bool = buttons.held_button() == SwingButtons.Pad.ALT
+    var advice: AimAdvice = AimAdvice.evaluate(view, target_position, tuning, alt, buttons.charge(now))
     preview.show_advice(advice, target_position, view.ball_position, tuning)
     aim_label.text = advice.text
     return advice
@@ -62,19 +68,28 @@ func show_status(text: String) -> void:
 func take_input(seq: int = 0) -> PlayerInput:
     # Keys are relative to the player's view; the away player looks the other way down the court.
     var move: Vector2 = GameInput.move_vector() * float(my_side)
-    var input: PlayerInput = PlayerInput.make(move, Input.is_action_pressed(GameInput.SPRINT), _pending_swing, target_position, seq)
-    _pending_swing = PlayerInput.Swing.NONE
+    var input: PlayerInput = PlayerInput.make(move, Input.is_action_pressed(GameInput.SPRINT), PlayerInput.Swing.NONE, target_position, seq)
+    if _pending != null:
+        input.swing = _pending.swing
+        input.power = _pending.power
+        input.stroke = _pending.stroke
+        _pending = null
     return input
 
 func _process(_delta: float) -> void:
     target_position = CourtAim.target_from_mouse(camera, get_viewport().get_mouse_position(), my_side, target_position)
+    var now: float = clock.call()
+    charge_meter.show_charge(buttons.pending_swing(now), buttons.charge(now), buttons.pending_stroke(now))
+
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_APPLICATION_FOCUS_OUT and buttons != null:
+        buttons.cancel() # a release the window never sees must not leave a drive charging forever
 
 func _unhandled_input(event: InputEvent) -> void:
-    if event.is_action_pressed(GameInput.SHOT_DRIVE):
-        _pending_swing = PlayerInput.Swing.DRIVE
-    elif event.is_action_pressed(GameInput.SHOT_DINK):
-        _pending_swing = PlayerInput.Swing.DINK
-    elif event.is_action_pressed(GameInput.RESET_BALL):
+    var now: float = clock.call()
+    if SwingInput.handle(buttons, event, now, func(request: SwingButtons.Request) -> void: _pending = request):
+        return
+    if event.is_action_pressed(GameInput.RESET_BALL):
         rematch_requested.emit()
     elif event.is_action_pressed(GameInput.CAMERA_NEXT):
         camera.next_rig()
@@ -96,9 +111,8 @@ func _make_hud() -> void:
     stack.add_child(status_label)
     stack.add_child(aim_label)
     var help := Label.new()
-    help.text = "%s/%s/%s/%s move | %s sprint | Mouse aim | %s drive | %s dink | %s rematch (after a match) | %s camera | %s menu" % [
-        GameInput.label(GameInput.MOVE_FORWARD), GameInput.label(GameInput.MOVE_LEFT), GameInput.label(GameInput.MOVE_BACK),
-        GameInput.label(GameInput.MOVE_RIGHT), GameInput.label(GameInput.SPRINT), GameInput.label(GameInput.SHOT_DRIVE),
-        GameInput.label(GameInput.SHOT_DINK), GameInput.label(GameInput.RESET_BALL), GameInput.label(GameInput.CAMERA_NEXT),
-        GameInput.label(GameInput.MENU_BACK)]
+    help.text = RallyText.controls_hint("%s rematch (after a match)" % GameInput.label(GameInput.RESET_BALL))
+    help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    help.custom_minimum_size = Vector2(600, 0)
     stack.add_child(help)
+    hud.add_child(charge_meter)

@@ -10,14 +10,16 @@ const MOVE_RIGHT := &"move_right"
 const MOVE_FORWARD := &"move_forward"
 const MOVE_BACK := &"move_back"
 const SPRINT := &"sprint"
-const SHOT_DRIVE := &"shot_drive"
-const SHOT_DINK := &"shot_dink"
+const SHOT_DINK_DRIVE := &"shot_dink_drive" ## tap: dink, hold: drive
+const SHOT_BLOCK_LOB := &"shot_block_lob" ## tap: block, hold: lob
+const BACKHAND := &"stroke_backhand" ## pressed with a swing on the left of the body
+const FOREHAND := &"stroke_forehand" ## pressed with a swing on the right of the body
 const RESET_BALL := &"reset_ball"
 const CAMERA_NEXT := &"camera_next"
 const MENU_BACK := &"menu_back"
 
 const ALL: Array[StringName] = [MOVE_LEFT, MOVE_RIGHT, MOVE_FORWARD, MOVE_BACK, SPRINT,
-    SHOT_DRIVE, SHOT_DINK, RESET_BALL, CAMERA_NEXT, MENU_BACK]
+    SHOT_DINK_DRIVE, SHOT_BLOCK_LOB, BACKHAND, FOREHAND, RESET_BALL, CAMERA_NEXT, MENU_BACK]
 
 ## Movement on the court plane: x is sideways, y is toward the player's own baseline.
 ## Length is at most 1, so diagonals are not faster.

@@ -13,10 +13,10 @@ func _initialize() -> void:
     # Serving from a legal spot at the diagonal court.
     var view: MatchView = _serve_view()
     var advice: AimAdvice = AimAdvice.evaluate(view, diagonal, tuning)
-    _assert(advice.state == A.OK and advice.text.begins_with("AIM OK") and advice.drive.ok and advice.dink.ok, "a legal serve is OK with both arcs")
+    _assert(advice.state == A.OK and advice.text.begins_with("AIM OK") and advice.hold.ok and advice.tap.ok, "a legal serve is OK with both arcs")
     _assert(advice.real_target.is_equal_approx(diagonal) and advice.contact.is_clean(), "a still ball in hand is a clean contact on target")
     advice = AimAdvice.evaluate(view, Vector3(1.5, 0.0, -4.6), tuning)
-    _assert(advice.state == A.BLOCKED and advice.text.contains("diagonal") and advice.drive.ok, "wrong service court is flagged but the arc is still shown")
+    _assert(advice.state == A.BLOCKED and advice.text.contains("diagonal") and advice.hold.ok, "wrong service court is flagged but the arc is still shown")
     view.my_position = Vector3(1.5, 0.0, 5.0)
     view.ball_position = view.my_position + Vector3(0.35, 1.0, -0.85)
     advice = AimAdvice.evaluate(view, diagonal, tuning)
@@ -48,7 +48,7 @@ func _initialize() -> void:
     view.phase = P.RETURN_IN_FLIGHT
     view.bounces_since_hit = 0
     advice = AimAdvice.evaluate(view, diagonal, tuning)
-    _assert(advice.state == A.BLOCKED and advice.text.begins_with("WAIT") and advice.drive == null, "the return must bounce: no arcs offered")
+    _assert(advice.state == A.BLOCKED and advice.text.begins_with("WAIT") and advice.hold == null, "the return must bounce: no arcs offered")
     view.phase = P.SERVE_IN_FLIGHT
     _assert(AimAdvice.evaluate(view, diagonal, tuning).text.begins_with("WAIT"), "the serve must bounce too")
     view = _rally_view()
@@ -62,7 +62,7 @@ func _initialize() -> void:
     view.my_position = Vector3(0.0, 0.0, 0.5)
     view.ball_position = Vector3(0.0, 0.12, 0.3)
     advice = AimAdvice.evaluate(view, Vector3(0.0, 0.0, -6.5), tuning)
-    _assert(advice.state == A.BLOCKED and advice.text.begins_with("AIM BLOCKED") and not advice.drive.ok, "no arc clears the net from low at the net")
+    _assert(advice.state == A.BLOCKED and advice.text.begins_with("AIM BLOCKED") and not advice.hold.ok, "no arc clears the net from low at the net")
 
     # The same advice works for the away side.
     view = _serve_view()
@@ -118,7 +118,7 @@ func _rally_view() -> MatchView:
 
 func _idle(view: MatchView, expected_text: String) -> bool:
     var advice: AimAdvice = AimAdvice.evaluate(view, Vector3(-1.5, 0.0, -4.6), tuning)
-    return advice.state == A.IDLE and advice.text.contains(expected_text) and advice.drive == null
+    return advice.state == A.IDLE and advice.text.contains(expected_text) and advice.hold == null
 
 func _assert(condition: bool, desc: String) -> void:
     checks += 1

@@ -37,14 +37,24 @@ func _run() -> void:
     _assert(game.sim.positions[1].x < before.x and court.home_player.position == game.sim.positions[1], "pressing move-left moves the player through the simulation")
     court.target_position = Vector3(-1.5, 0.0, -4.6)
     game._physics_process(DT)
-    _assert(court.aim_label.text.begins_with("AIM OK") and court.preview.drive_arc.shown_points.size() > 0, "aim hint and arc are shown for a legal serve")
+    _assert(court.aim_label.text.begins_with("AIM OK") and court.preview.hold_arc.shown_points.size() > 0, "aim hint and arc are shown for a legal serve")
     _assert(court.preview.marker_material.albedo_color == AimPreview.OK_COLOR, "aim ring shows OK")
-    var click := InputEventAction.new()
-    click.action = GameInput.SHOT_DRIVE
-    click.pressed = true
-    court._unhandled_input(click)
+    # Hold the left button long enough for a drive, with E (forehand) pressed for this swing.
+    var now: Array[float] = [100.0]
+    court.clock = func() -> float: return now[0]
+    court._unhandled_input(_action(GameInput.FOREHAND, true))
+    court._unhandled_input(_action(GameInput.SHOT_DINK_DRIVE, true))
+    now[0] += 0.5
+    court._process(DT)
+    _assert(court.charge_meter.visible and court.charge_meter.caption.text.begins_with("DRIVE"), "holding the button shows the drive charge meter")
     game._physics_process(DT)
-    _assert(game.sim.referee.rally.phase == P.SERVE_IN_FLIGHT and court.status_label.text.begins_with("DRIVE"), "clicking serves the ball and the status names the shot")
+    _assert(game.sim.referee.rally.phase == P.WAITING_FOR_SERVE, "nothing is hit while the button is still held")
+    court._unhandled_input(_action(GameInput.SHOT_DINK_DRIVE, false))
+    court._process(DT)
+    _assert(not court.charge_meter.visible, "the meter hides on release")
+    game._physics_process(DT)
+    _assert(game.sim.referee.rally.phase == P.SERVE_IN_FLIGHT and court.status_label.text.begins_with("DRIVE"), "releasing serves the ball and the status names the shot")
+    _assert(court.status_label.text.contains("CLEAN"), "a forehand on a ball held in front is clean")
     game._physics_process(DT)
     _assert(game.sim.referee.rally.phase == P.SERVE_IN_FLIGHT and court.aim_label.text.contains("Your shot"), "one click is one swing")
 
@@ -96,6 +106,12 @@ func _play(game: Node, max_ticks: int, done: Callable) -> void:
         if done.call():
             return
         game._physics_process(DT)
+
+func _action(action: StringName, pressed: bool) -> InputEventAction:
+    var event := InputEventAction.new()
+    event.action = action
+    event.pressed = pressed
+    return event
 
 func _assert(condition: bool, desc: String) -> void:
     checks += 1
