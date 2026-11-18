@@ -16,7 +16,13 @@ func _initialize() -> void:
     var click := InputEventMouseButton.new()
     click.button_index = MOUSE_BUTTON_LEFT
     click.pressed = true
-    _assert(click.is_action_pressed(GameInput.SHOT_DRIVE) and not click.is_action_pressed(GameInput.SHOT_DINK), "left click is drive only")
+    _assert(click.is_action_pressed(GameInput.SHOT_DINK_DRIVE) and not click.is_action_pressed(GameInput.SHOT_BLOCK_LOB), "left click is the dink/drive button only")
+    var right_click := InputEventMouseButton.new()
+    right_click.button_index = MOUSE_BUTTON_RIGHT
+    right_click.pressed = true
+    _assert(right_click.is_action_pressed(GameInput.SHOT_BLOCK_LOB) and not right_click.is_action_pressed(GameInput.SHOT_DINK_DRIVE), "right click is the block/lob button only")
+    _assert(InputMap.event_is_action(_key(KEY_Q), GameInput.BACKHAND), "Q is backhand")
+    _assert(InputMap.event_is_action(_key(KEY_E), GameInput.FOREHAND), "E is forehand")
     var device_zero: InputEventKey = _key(KEY_D)
     device_zero.device = 0
     _assert(InputMap.event_is_action(device_zero, GameInput.MOVE_RIGHT), "bindings match any device id")

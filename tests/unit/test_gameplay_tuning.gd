@@ -11,7 +11,13 @@ func _initialize() -> void:
     _assert(shipped is GameplayTuning, "config/gameplay_tuning.tres is a GameplayTuning")
     var t: GameplayTuning = shipped
     _assert(t.gravity > 0.0, "gravity is positive")
-    _assert(t.drive_speed > t.dink_speed and t.dink_speed > 0.0, "drive is faster than dink")
+    _assert(t.drive_max_speed > t.drive_min_speed and t.drive_min_speed > t.volley_dink_speed and t.volley_dink_speed > t.block_speed and t.block_speed > 0.0, "drive is faster than a volley dink, which is faster than a block")
+    _assert(t.dink_flight_time > t.drive_max_flight_time and t.lob_min_flight_time > t.dink_max_flight_time, "a dink hangs longer than any drive, a lob longer than any dink")
+    _assert(t.drive_min_spin > 0.0 and t.dink_spin < 0.0 and t.block_spin < 0.0, "drives carry topspin, dinks and blocks backspin")
+    _assert(t.lob_max_flight_time > t.lob_min_flight_time and t.lob_min_flight_time > t.max_flight_time, "lobs fly longer (higher) than any other shot")
+    _assert(t.air_drag > 0.0 and t.spin_lift > 0.0, "drag and spin are on")
+    _assert(t.tap_threshold > 0.1 and t.tap_threshold < 0.2 and t.full_charge_time > t.tap_threshold, "tap threshold is about 150 ms and below full charge")
+    _assert(t.volley_dink_window < t.volley_block_window, "a block is more forgiving to time than a volley dink")
     _assert(t.min_flight_time > 0.0 and t.min_flight_time < t.max_flight_time, "flight time range is ordered")
     _assert(t.bounce_restitution > 0.0 and t.bounce_restitution < 1.0, "bounce loses height")
     _assert(t.sprint_speed >= t.move_speed and t.move_speed > 0.0, "sprint is not slower than run")
@@ -24,18 +30,25 @@ func _initialize() -> void:
     # Swapping the resource changes behaviour with no script edits.
     var custom := GameplayTuning.new()
     custom.gravity = 0.0
+    custom.air_drag = 0.0
     ball.tuning = custom
     ball.position = Vector3(0, 3.0, 3.0)
     ball.ball_velocity = Vector3(0, 1.0, 0)
     ball.moving = true
     ball._physics_process(STEP)
-    _assert(is_equal_approx(ball.ball_velocity.y, 1.0), "zero gravity leaves vertical speed alone")
+    _assert(is_equal_approx(ball.ball_velocity.y, 1.0), "zero gravity and drag leave vertical speed alone")
 
     custom.gravity = 20.0
     ball._physics_process(STEP)
     _assert(is_equal_approx(ball.ball_velocity.y, 1.0 - 20.0 * STEP), "gravity value is applied per step")
 
     custom.gravity = 0.0
+    custom.air_drag = 0.6
+    ball.ball_velocity = Vector3(10.0, 0.0, 0.0)
+    ball._physics_process(STEP)
+    _assert(is_equal_approx(ball.ball_velocity.x, 10.0 * exp(-0.6 * STEP)), "air drag value is applied per step")
+
+    custom.air_drag = 0.0
     custom.bounce_restitution = 0.5
     custom.bounce_friction = 0.25
     ball.reset_ball(Vector3(0, PickleballBall.RADIUS + 0.01, 3.0))
@@ -45,18 +58,25 @@ func _initialize() -> void:
     _assert(is_equal_approx(ball.ball_velocity.y, 3.0), "restitution scales the bounce")
     _assert(is_equal_approx(ball.ball_velocity.x, 1.0), "friction scales horizontal speed")
 
-    # A slower drive speed means a longer flight, so lower horizontal velocity.
+    # Charge picks the drive pace between the configured minimum and maximum.
     custom.gravity = 9.81 # a real arc; with zero gravity no shot can clear the net
-    custom.min_flight_time = 0.0
     custom.max_flight_time = 10.0
-    custom.drive_speed = 10.0
-    custom.dink_speed = 5.0
+    custom.drive_min_flight_time = 0.0
+    custom.drive_max_flight_time = 10.0
+    custom.drive_min_speed = 10.0
+    custom.drive_max_speed = 20.0
+    custom.dink_flight_time = 2.0
+    custom.dink_max_flight_time = 3.0
+    custom.min_flight_time = 0.0
     ball.reset_ball(Vector3(0, 1.0, 5.0))
-    ball.launch(Vector3(0, 0, -5.0), false)
-    _assert(is_equal_approx(ball.ball_velocity.z, -10.0), "drive uses drive_speed")
+    ball.launch(Vector3(0, 0, -5.0), ShotRecipe.make(ShotRecipe.Kind.DRIVE, 0.0, false, custom))
+    _assert(is_equal_approx(ball.ball_velocity.z, -10.0), "an uncharged drive uses drive_min_speed")
     ball.reset_ball(Vector3(0, 1.0, 5.0))
-    ball.launch(Vector3(0, 0, -5.0), true)
-    _assert(is_equal_approx(ball.ball_velocity.z, -5.0), "dink uses dink_speed")
+    ball.launch(Vector3(0, 0, -5.0), ShotRecipe.make(ShotRecipe.Kind.DRIVE, 1.0, false, custom))
+    _assert(is_equal_approx(ball.ball_velocity.z, -20.0), "a full drive uses drive_max_speed")
+    ball.reset_ball(Vector3(0, 1.0, 5.0))
+    ball.launch(Vector3(0, 0, -5.0), ShotRecipe.make(ShotRecipe.Kind.DINK, 0.0, false, custom))
+    _assert(is_equal_approx(ball.ball_velocity.z, -5.0), "a dink takes dink_flight_time whatever the distance")
     ball.free()
 
     if errors.is_empty():

@@ -3,9 +3,11 @@ class_name CourtCamera
 ## Follows one player using the active CameraRig. Owns all camera motion so game scripts
 ## only set `target` and, if they want, switch rigs.
 
+## The first rig is the default; C cycles through the rest.
 @export var rigs: Array[CameraRig] = [
-    preload("res://config/camera_training.tres"),
+    preload("res://config/camera_chase.tres"),
     preload("res://config/camera_match.tres"),
+    preload("res://config/camera_training.tres"),
 ]
 var rig_index: int = 0
 var side: int = 1 ## +1 films from behind the home baseline, -1 from behind the away baseline

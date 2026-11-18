@@ -278,11 +278,11 @@ func _kick(peer_id: int) -> void:
 func _on_rally_started(rally: RallyState) -> void:
     _send_event(NetProtocol.EventType.RALLY_STARTED, [rally.rally_id, rally.server_side, rally.serve_from_right])
 
-func _on_swing_resolved(side: int, result: MatchSimulation.SwingResult, contact: SwingContact.Contact, soft: bool) -> void:
-    var payload: Array = [side, int(result), soft, contact.label() if contact != null else ""]
+func _on_swing_resolved(side: int, result: MatchSimulation.SwingResult, contact: SwingContact.Contact, shot: ShotRecipe.Kind) -> void:
+    var payload: Array = [side, int(result), int(shot), contact.label() if contact != null else ""]
     if result == MatchSimulation.SwingResult.HIT:
         _send_event(NetProtocol.EventType.SWING, payload)
-    elif result != MatchSimulation.SwingResult.NOT_LIVE and result != MatchSimulation.SwingResult.ALREADY_HIT and sim.tick - _last_refusal[side] >= REFUSAL_GAP_TICKS:
+    elif not result in [MatchSimulation.SwingResult.NOT_LIVE, MatchSimulation.SwingResult.ALREADY_HIT, MatchSimulation.SwingResult.RECOVERING] and sim.tick - _last_refusal[side] >= REFUSAL_GAP_TICKS:
         # Only the player who swung needs to know why it missed, and not sixty times a second.
         _last_refusal[side] = sim.tick
         _send_event(NetProtocol.EventType.SWING, payload, side)

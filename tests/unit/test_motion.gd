@@ -35,14 +35,14 @@ func _initialize() -> void:
     var node: PickleballBall = (load("res://scenes/ball/ball.tscn") as PackedScene).instantiate()
     node.tuning = t
     node.reset_ball(state.position)
-    _assert(state.launch(Vector3(-1.5, 0, -4.5), false, t).ok and node.launch(Vector3(-1.5, 0, -4.5), false).ok, "both accept the same shot")
+    _assert(state.launch(Vector3(-1.5, 0, -4.5), ShotRecipe.make(ShotRecipe.Kind.DRIVE, 0.5, false, t), t).ok and node.launch(Vector3(-1.5, 0, -4.5), ShotRecipe.make(ShotRecipe.Kind.DRIVE, 0.5, false, t)).ok, "both accept the same shot")
     var same: bool = true
     var bounces: int = 0
     for i in range(240):
         if state.step(DT, t) == BallState.Event.BOUNCE:
             bounces += 1
         node._physics_process(DT)
-        same = same and state.position == node.position and state.velocity == node.ball_velocity and state.moving == node.moving
+        same = same and state.position == node.position and state.velocity == node.ball_velocity and state.spin == node.ball_spin and state.moving == node.moving
     _assert(same, "ball node and BallState stay identical for four seconds")
     _assert(bounces >= 2 and not state.moving, "the ball bounces and comes to rest")
     node.free()
@@ -59,7 +59,23 @@ func _initialize() -> void:
     _assert(event == BallState.Event.NET and not state.moving, "a low flat ball reports NET and stops")
     state.place(Vector3(0.0, 0.3, 3.0))
     _assert(state.step(DT, t) == BallState.Event.NONE and state.position == Vector3(0.0, 0.3, 3.0), "a ball that is not moving stays put")
-    _assert(not state.launch(Vector3(0.0, 0.0, 3.0), false, t).ok and not state.moving, "a refused shot leaves the ball alone")
+    _assert(not state.launch(Vector3(0.0, 0.0, 3.0), ShotRecipe.make(ShotRecipe.Kind.DRIVE, 0.5, false, t), t).ok and not state.moving, "a refused shot leaves the ball alone")
+
+    # Spin at the bounce: topspin skids on faster and lower, backspin checks up.
+    var top: BallState = _bounce_once(Vector3(0.0, -6.0, -10.0), 25.0, t)
+    var flat: BallState = _bounce_once(Vector3(0.0, -6.0, -10.0), 0.0, t)
+    var back: BallState = _bounce_once(Vector3(0.0, -6.0, -10.0), -12.0, t)
+    _assert(absf(top.velocity.z) > absf(flat.velocity.z) and absf(flat.velocity.z) > absf(back.velocity.z), "topspin kicks on, backspin checks up")
+    _assert(top.velocity.y < flat.velocity.y and back.velocity.y > flat.velocity.y, "topspin bounces lower, backspin a little higher")
+    _assert(absf(flat.velocity.z) < 10.0 and flat.velocity.y < 6.0, "every bounce loses speed")
+    _assert(is_equal_approx(top.spin, 25.0 * t.bounce_spin_keep), "the ball keeps only part of its spin")
+    _assert(back.velocity.z <= 0.0, "backspin never pulls the ball back toward the hitter")
+    var landing_check := BallState.new()
+    landing_check.position = Vector3(0.0, 1.0, 3.0)
+    landing_check.launch(Vector3(0.5, 0.0, -4.0), ShotRecipe.make(ShotRecipe.Kind.DINK, 0.0, false, t), t)
+    var predicted: Dictionary = landing_check.predict_landing(t)
+    _assert(predicted["event"] == BallState.Event.BOUNCE and Vector2(predicted["position"].x - 0.5, predicted["position"].z + 4.0).length() < 0.02, "predict_landing finds the solved landing point")
+    _assert(landing_check.moving and landing_check.position == Vector3(0.0, 1.0, 3.0), "predicting does not move the real ball")
 
     if errors.is_empty():
         print("PASS: %d motion checks" % checks)
@@ -67,6 +83,16 @@ func _initialize() -> void:
     else:
         for error in errors: printerr("FAIL: ", error)
         quit(1)
+
+## One floor contact of a ball arriving with this velocity and spin.
+func _bounce_once(velocity: Vector3, spin: float, tuning: GameplayTuning) -> BallState:
+    var ball := BallState.new()
+    ball.position = Vector3(0.0, BallState.RADIUS, 2.0)
+    ball.velocity = velocity
+    ball.spin = spin
+    ball.moving = true
+    ball.bounce(tuning)
+    return ball
 
 func _assert(condition: bool, desc: String) -> void:
     checks += 1

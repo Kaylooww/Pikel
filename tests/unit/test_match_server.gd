@@ -107,11 +107,11 @@ func _initialize() -> void:
     fresh.on_input(BOB, NetProtocol.encode_input(id, PlayerInput.make(Vector2.ZERO, false, DRIVE, Vector3(1.5, 0, 4.6), 1)))
     fresh.tick()
     _assert(not sim.ball.moving and sim.referee.rally.phase == RallyState.Phase.WAITING_FOR_SERVE, "the receiver cannot hit the server's ball by asking to")
-    fresh.on_input(ALICE, NetProtocol.encode_input(id, PlayerInput.make(Vector2.ZERO, false, DRIVE, Vector3(-1.5, 0, -4.6), 1)))
+    fresh.on_input(ALICE, NetProtocol.encode_input(id, PlayerInput.make(Vector2.ZERO, false, DRIVE, Vector3(-1.5, 0, -4.6), 1, 0.4, SwingContact.Stroke.FOREHAND)))
     fresh.tick()
     _assert(sim.ball.moving and sim.referee.rally.phase == RallyState.Phase.SERVE_IN_FLIGHT, "the server's swing is judged by the server and connects")
     var swing: Array = fresh.events_sent[-1]
-    _assert(swing[2] == E.SWING and swing.slice(3) == [1, int(MatchSimulation.SwingResult.HIT), false, "CLEAN"], "the hit is announced with who, the result and the contact quality")
+    _assert(swing[2] == E.SWING and swing.slice(3) == [1, int(MatchSimulation.SwingResult.HIT), int(ShotRecipe.Kind.DRIVE), "CLEAN"], "the hit is announced with who, the result and the contact quality")
     for i in range(20):
         fresh.on_input(BOB, NetProtocol.encode_input(id, PlayerInput.make(Vector2.ZERO, false, DRIVE, Vector3(1.5, 0, 4.6), 2 + i)))
         fresh.tick()

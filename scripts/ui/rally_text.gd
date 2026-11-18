@@ -22,15 +22,24 @@ static func fault_text(reason: RallyState.Fault, winner_side: int, serve_from_ri
         _: what = "DOUBLE HIT"
     return "%s  —  %s" % [what, "you win the rally" if winner_side == my_side else "opponent wins the rally"]
 
-static func swing(result: MatchSimulation.SwingResult, soft: bool, contact_label: String) -> String:
+static func swing(result: MatchSimulation.SwingResult, shot: ShotRecipe.Kind, contact_label: String) -> String:
     match result:
-        MatchSimulation.SwingResult.HIT: return "%s  —  %s" % ["DINK" if soft else "DRIVE", contact_label]
+        MatchSimulation.SwingResult.HIT: return "%s  —  %s" % [ShotRecipe.kind_name(shot), contact_label]
+        MatchSimulation.SwingResult.MISTIMED: return "MISSED THE VOLLEY  —  %s. Press as the ball reaches you." % contact_label
         MatchSimulation.SwingResult.OUT_OF_REACH: return "Too far from ball — move closer."
         MatchSimulation.SwingResult.WRONG_HALF: return "Ball is still on the other half."
         MatchSimulation.SwingResult.NO_SHOT_NET: return "Can't clear the net from here — get under the ball or aim shorter."
         MatchSimulation.SwingResult.NO_SHOT_OUT: return "That swing would send the ball out."
         MatchSimulation.SwingResult.NO_SHOT_TOO_FAST: return "Too far for that shot."
-        _: return "" # not live, or your own shot: nothing worth saying
+        _: return "" # not live, your own shot, or recovering: nothing worth saying
+
+## The control line for the HUD, from the current bindings.
+static func controls_hint(extra: String) -> String:
+    return "%s/%s/%s/%s move | %s sprint | Mouse aim | %s tap dink, hold drive | %s tap block, hold lob | %s backhand / %s forehand with each swing | %s | %s camera | %s menu" % [
+        GameInput.label(GameInput.MOVE_FORWARD), GameInput.label(GameInput.MOVE_LEFT), GameInput.label(GameInput.MOVE_BACK),
+        GameInput.label(GameInput.MOVE_RIGHT), GameInput.label(GameInput.SPRINT), GameInput.label(GameInput.SHOT_DINK_DRIVE),
+        GameInput.label(GameInput.SHOT_BLOCK_LOB), GameInput.label(GameInput.BACKHAND), GameInput.label(GameInput.FOREHAND),
+        extra, GameInput.label(GameInput.CAMERA_NEXT), GameInput.label(GameInput.MENU_BACK)]
 
 ## "YOU 3  –  2 OPPONENT   |   You serve, right court"
 static func score_line(home_points: int, away_points: int, server_side: int, serve_from_right: bool, my_side: int) -> String:

@@ -176,3 +176,12 @@ Do not describe this project as a fully validated production game.
 - [x] Windowed client (run through the Godot MCP bridge) joined a server started with `--code=TEST42` without a code and printed `Wrong match code. Ask the host for the code their server printed.` Only the log was read.
 - [ ] Nobody has typed a code into the main menu's new field or looked at the reworked join row on screen.
 - [ ] Public server deployment is not built; it waits for approval.
+
+## New hit controls and volley exchanges, recorded 2026-11-18 (Godot 4.7.2 Linux headless, not the Windows machine)
+
+- [x] Headless import: exit 0, no errors.
+- [x] All 23 test files pass, two of them new: `test_swing_buttons.gd` (31 tap/hold and Q/E checks) and `test_volley_exchange.gd` (25 volley timing, kitchen and two-bounce checks). Changed counts: shot solver 38, swing contact 35, motion 21, gameplay tuning 22, input 31, net protocol 43, singles match 24.
+- [x] Four bot-vs-bot matches in the simulation: every shot type is used, about 700 volleys, matches end. Every rally still ends in a double bounce, as before this change, because a swing that would land out is refused rather than hit out.
+- [ ] Nobody has held a mouse button, watched the charge meter or tried to time a volley. Every timing window and power range is a first guess.
+- [x] `tools/lan_smoke_test.sh` with protocol version 4: final `3-0`, server and both clients agreed, 0 rejected inputs.
+- [ ] Not run on macOS with a window; the game has only been played on Windows.
